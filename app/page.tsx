@@ -21,6 +21,7 @@ export default function Home() {
   const [totalScore, setTotalScore] = useState(0);
   const [round, setRound] = useState(1);
   const [usedPhotoIds, setUsedPhotoIds] = useState<string[]>([]);
+  const [failedPhotoIds, setFailedPhotoIds] = useState<string[]>([]);
 
   const minYear = 1900;
   const maxYear = useMemo(() => new Date().getFullYear(), []);
@@ -39,11 +40,20 @@ export default function Home() {
     return { chosen, nextUsedIds };
   };
 
+  const pickRandomPhotoExcludingFailed = (source: Photo[]) => {
+    const failedSet = new Set(failedPhotoIds);
+    const available = source.filter((photo) => !failedSet.has(photo.id));
+    const pool = available.length > 0 ? available : source;
+    return pool[Math.floor(Math.random() * pool.length)];
+  };
+
   const startNewGame = (sourcePhotos: Photo[]) => {
     if (sourcePhotos.length === 0) return;
-    const { chosen, nextUsedIds } = pickRandomPhoto(sourcePhotos, []);
+    const chosen = pickRandomPhotoExcludingFailed(sourcePhotos);
+    const nextUsedIds = chosen ? [chosen.id] : [];
     setCurrentPhoto(chosen);
     setUsedPhotoIds(nextUsedIds);
+    setFailedPhotoIds([]);
     setGuessYear(clampYear(1960));
     setShowResult(false);
     setLastScore(0);
@@ -91,6 +101,22 @@ export default function Home() {
     setRound((prev) => Math.min(maxRounds, prev + 1));
   };
 
+  const handleImageError = () => {
+    if (!currentPhoto) return;
+    const nextFailed = failedPhotoIds.includes(currentPhoto.id)
+      ? failedPhotoIds
+      : [...failedPhotoIds, currentPhoto.id];
+    setFailedPhotoIds(nextFailed);
+
+    if (photos.length === 0 || nextFailed.length >= photos.length) {
+      setCurrentPhoto(null);
+      return;
+    }
+
+    const replacement = pickRandomPhotoExcludingFailed(photos);
+    setCurrentPhoto(replacement);
+  };
+
   const isGameOver = round >= maxRounds;
 
   return (
@@ -102,10 +128,11 @@ export default function Home() {
               src={currentPhoto.image_url}
               alt="photo"
               className="w-full h-auto max-h-[60vh] object-contain"
+              onError={handleImageError}
             />
           ) : (
             <div className="flex h-[40vh] items-center justify-center text-sm text-zinc-500">
-              Brak zdjęć w bazie.
+              Brak działających zdjęć w bazie.
             </div>
           )}
         </div>
