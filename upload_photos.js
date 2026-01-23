@@ -23,6 +23,104 @@ const YEAR_RANGES = [
   { start: 2010, end: 2024, weight: 6 }
 ];
 
+const SEARCH_KEYWORDS = [
+  "street",
+  "city",
+  "square",
+  "market",
+  "station",
+  "metro",
+  "tram",
+  "train",
+  "bus",
+  "traffic",
+  "cars",
+  "people",
+  "crowd",
+  "parade",
+  "festival",
+  "protest",
+  "concert",
+  "stadium",
+  "olympics",
+  "fashion",
+  "airport",
+  "school",
+  "university",
+  "office",
+  "factory",
+  "newspaper",
+  "television",
+  "computer",
+  "phone"
+];
+
+const GOOD_TITLE_HINTS = [
+  "street",
+  "city",
+  "square",
+  "market",
+  "station",
+  "metro",
+  "tram",
+  "train",
+  "bus",
+  "traffic",
+  "cars",
+  "people",
+  "crowd",
+  "parade",
+  "festival",
+  "protest",
+  "concert",
+  "stadium",
+  "olympics",
+  "fashion",
+  "airport",
+  "school",
+  "university",
+  "office",
+  "factory",
+  "newspaper",
+  "television",
+  "computer",
+  "phone",
+  "president",
+  "queen",
+  "king",
+  "pope",
+  "beatles",
+  "elvis",
+  "einstein"
+];
+
+const BAD_TITLE_HINTS = [
+  "logo",
+  "map",
+  "diagram",
+  "chart",
+  "drawing",
+  "painting",
+  "illustration",
+  "manuscript",
+  "document",
+  "inscription",
+  "stone",
+  "rock",
+  "coin",
+  "stamp",
+  "flag",
+  "coat of arms",
+  "heraldry",
+  "mosaic",
+  "sculpture",
+  "floorplan",
+  "poster",
+  "sign",
+  "cover",
+  "album"
+];
+
 const WIKI_API_BASE = "https://commons.wikimedia.org/w/api.php";
 const REQUEST_DELAY_MS = 3000;
 const MAX_RETRIES = 10;
@@ -104,6 +202,13 @@ function humanizeFileTitle(fileTitle) {
   return noExt.replace(/_/g, " ").trim();
 }
 
+function titleLooksGuessable(title) {
+  if (!title) return false;
+  const lower = title.toLowerCase();
+  if (BAD_TITLE_HINTS.some((hint) => lower.includes(hint))) return false;
+  return GOOD_TITLE_HINTS.some((hint) => lower.includes(hint));
+}
+
 async function fetchCategoryMembers(categoryTitle) {
   const url =
     `${WIKI_API_BASE}?action=query&list=categorymembers&cmtitle=` +
@@ -117,19 +222,11 @@ async function fetchCategoryMembers(categoryTitle) {
 }
 
 async function fetchFilesForYear(year) {
-  const categoriesToTry = [
-    `Category:${year} photographs`,
-    `Category:Photographs taken in ${year}`,
-    `Category:${year} in photographs`,
-    `Category:${year} in photography`
-  ];
+  const shuffledKeywords = [...SEARCH_KEYWORDS].sort(() => Math.random() - 0.5);
+  const searchQueries = shuffledKeywords.slice(0, 6).map((keyword) => `${year} ${keyword} photograph`);
+  searchQueries.unshift(`${year} street photo`);
+  searchQueries.unshift(`${year} city photo`);
 
-  for (const category of categoriesToTry) {
-    const members = await fetchCategoryMembers(category);
-    if (members.length > 0) return members;
-  }
-
-  const searchQueries = [`${year} photograph`, `${year} photo`, `${year}`];
   for (const query of searchQueries) {
     const url =
       `${WIKI_API_BASE}?action=query&list=search&srnamespace=6&` +
@@ -172,6 +269,8 @@ async function buildPhotoList() {
       continue;
     }
     const fileName = candidate.replace(/^File:/i, "");
+    const title = humanizeFileTitle(candidate);
+    if (!titleLooksGuessable(title)) continue;
     const uniqueKey = `${year}|${fileName}`;
     if (usedFiles.has(uniqueKey)) continue;
 
@@ -179,7 +278,7 @@ async function buildPhotoList() {
     photos.push({
       fileName,
       year,
-      title: humanizeFileTitle(candidate)
+      title
     });
   }
 
