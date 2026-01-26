@@ -120,94 +120,122 @@ export default function Home() {
   const isGameOver = round >= maxRounds;
 
   return (
-    <div className="min-h-screen bg-zinc-50 text-zinc-900 dark:bg-black dark:text-zinc-50">
-      <main className="mx-auto flex min-h-screen w-full max-w-md flex-col gap-6 px-4 py-6">
-        <div className="rounded-2xl bg-zinc-200 p-2 dark:bg-zinc-900">
-          {currentPhoto ? (
-            <img
-              src={currentPhoto.image_url}
-              alt="photo"
-              className="w-full h-auto max-h-[60vh] object-contain"
-              onError={handleImageError}
-            />
-          ) : (
-            <div className="flex h-[40vh] items-center justify-center text-sm text-zinc-500">
-              Brak działających zdjęć w bazie.
+    <div className="min-h-screen bg-[#f5f3ee] text-zinc-900">
+      <main className="mx-auto flex min-h-screen w-full max-w-3xl flex-col gap-6 px-4 py-6 sm:px-6">
+        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-300/70 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="rounded-full border-2 border-zinc-900 px-3 py-1 text-xs font-black uppercase tracking-[0.3em]">
+              TimeGuesser
             </div>
-          )}
-        </div>
+            <div className="hidden text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500 sm:block">
+              Chrono Edition
+            </div>
+          </div>
+          <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.2em] text-zinc-600">
+            <span className="rounded-full border border-zinc-900 px-3 py-1">
+              Runda {round}/{maxRounds}
+            </span>
+            <span className="rounded-full border border-zinc-300 bg-white px-3 py-1">
+              Wynik: {totalScore} pkt
+            </span>
+          </div>
+        </header>
 
-        <div className="flex items-center justify-between text-xs uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
-          <span>
-            Runda {round}/{maxRounds}
-          </span>
-          <span>Wynik: {totalScore} pkt</span>
-        </div>
+        <section className="flex flex-col items-center gap-5">
+          <div className="w-full rounded-2xl border-2 border-zinc-900 bg-white p-3 shadow-[0_8px_0_0_rgba(0,0,0,0.08)]">
+            <div className="rounded-xl border border-zinc-200 bg-zinc-100 p-2">
+              {currentPhoto ? (
+                <img
+                  src={currentPhoto.image_url}
+                  alt="photo"
+                  className="w-full h-auto max-h-[60vh] object-contain"
+                  onError={handleImageError}
+                />
+              ) : (
+                <div className="flex h-[40vh] items-center justify-center text-sm text-zinc-500">
+                  Brak działających zdjęć w bazie.
+                </div>
+              )}
+            </div>
+          </div>
 
-        <div className="text-center text-5xl font-black tracking-tight text-zinc-900 dark:text-zinc-50 tabular-nums">
-          {guessYear}
-        </div>
+          <div className="text-center text-sm font-semibold uppercase tracking-[0.25em] text-zinc-600">
+            What year was this photo taken?
+          </div>
 
-        <div className="flex items-center gap-3">
+          <div className="rounded-2xl border-2 border-zinc-900 bg-white px-6 py-3 text-5xl font-black tracking-tight tabular-nums shadow-[0_6px_0_0_rgba(0,0,0,0.12)]">
+            {guessYear}
+          </div>
+
+          <div className="flex w-full items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setGuessYear((v) => clampYear(v - 1))}
+              className="h-12 w-12 rounded-full border-2 border-zinc-900 bg-white text-xl font-black"
+              aria-label="Minus one year"
+            >
+              -
+            </button>
+            <div className="flex-1">
+              <input
+                type="range"
+                min={minYear}
+                max={maxYear}
+                step={1}
+                value={guessYear}
+                onChange={(event) => setGuessYear(Number(event.target.value))}
+                className="w-full accent-zinc-900"
+                aria-label="Select year"
+              />
+              <div
+                className="mt-2 h-2 w-full rounded-full border border-zinc-900 bg-white"
+                style={{
+                  backgroundImage:
+                    "repeating-linear-gradient(90deg, rgba(0,0,0,0.5) 0, rgba(0,0,0,0.5) 1px, transparent 1px, transparent 24px)",
+                }}
+              />
+              <div className="mt-2 flex justify-between text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
+                <span>{minYear}</span>
+                <span>{maxYear}</span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setGuessYear((v) => clampYear(v + 1))}
+              className="h-12 w-12 rounded-full border-2 border-zinc-900 bg-white text-xl font-black"
+              aria-label="Plus one year"
+            >
+              +
+            </button>
+          </div>
+
           <button
             type="button"
-            onClick={() => setGuessYear((v) => clampYear(v - 1))}
-            className="h-12 w-12 rounded-full bg-zinc-900 text-white text-xl font-bold dark:bg-white dark:text-black"
-            aria-label="Minus one year"
+            onClick={handleConfirm}
+            disabled={!currentPhoto || showResult}
+            className="mt-2 w-full rounded-2xl border-2 border-zinc-900 bg-zinc-900 py-4 text-lg font-extrabold uppercase tracking-[0.2em] text-white shadow-[0_8px_0_0_rgba(0,0,0,0.2)] disabled:cursor-not-allowed disabled:opacity-50"
           >
-            -
+            ZATWIERDŹ
           </button>
-          <input
-            type="range"
-            min={minYear}
-            max={maxYear}
-            step={1}
-            value={guessYear}
-            onChange={(event) => setGuessYear(Number(event.target.value))}
-            className="w-full accent-zinc-900 dark:accent-zinc-50"
-            aria-label="Select year"
-          />
-          <button
-            type="button"
-            onClick={() => setGuessYear((v) => clampYear(v + 1))}
-            className="h-12 w-12 rounded-full bg-zinc-900 text-white text-xl font-bold dark:bg-white dark:text-black"
-            aria-label="Plus one year"
-          >
-            +
-          </button>
-        </div>
-
-        <div className="flex justify-between text-xs text-zinc-500 dark:text-zinc-400">
-          <span>{minYear}</span>
-          <span>{maxYear}</span>
-        </div>
-
-        <button
-          type="button"
-          onClick={handleConfirm}
-          disabled={!currentPhoto || showResult}
-          className="mt-2 w-full rounded-2xl bg-zinc-900 py-4 text-lg font-extrabold text-white disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-black"
-        >
-          ZATWIERDŹ
-        </button>
+        </section>
       </main>
 
       {showResult && currentPhoto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-          <div className="w-full max-w-sm rounded-2xl bg-white p-6 text-zinc-900 shadow-xl dark:bg-zinc-950 dark:text-zinc-50">
+          <div className="w-full max-w-sm rounded-2xl border-2 border-zinc-900 bg-white p-6 text-zinc-900 shadow-[0_12px_0_0_rgba(0,0,0,0.2)]">
             {isGameOver ? (
               <>
-                <div className="text-center text-3xl font-black">GAME OVER</div>
-                <div className="mt-4 text-center text-sm text-zinc-600 dark:text-zinc-300">
+                <div className="text-center text-3xl font-black tracking-wide">GAME OVER</div>
+                <div className="mt-4 text-center text-sm text-zinc-600">
                   Twój wynik końcowy:{" "}
-                  <span className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
+                  <span className="text-lg font-bold text-zinc-900">
                     {totalScore} / {maxRounds * 1000} pkt
                   </span>
                 </div>
                 <button
                   type="button"
                   onClick={() => startNewGame(photos)}
-                  className="mt-6 w-full rounded-xl bg-zinc-900 py-3 text-base font-bold text-white dark:bg-white dark:text-black"
+                  className="mt-6 w-full rounded-xl border-2 border-zinc-900 bg-zinc-900 py-3 text-base font-bold uppercase tracking-[0.2em] text-white"
                 >
                   ZAGRAJ JESZCZE RAZ
                 </button>
@@ -215,17 +243,17 @@ export default function Home() {
             ) : (
               <>
                 <div className="text-center text-2xl font-black">Wynik rundy</div>
-                <div className="mt-4 space-y-2 text-center text-sm text-zinc-600 dark:text-zinc-300">
+                <div className="mt-4 space-y-2 text-center text-sm text-zinc-600">
                   <div>Rok zdjęcia: {currentPhoto.year_true}</div>
                   <div>Twój typ: {guessYear}</div>
-                  <div className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
+                  <div className="text-lg font-bold text-zinc-900">
                     Wynik: {lastScore} pkt
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={handleNextRound}
-                  className="mt-6 w-full rounded-xl bg-zinc-900 py-3 text-base font-bold text-white dark:bg-white dark:text-black"
+                  className="mt-6 w-full rounded-xl border-2 border-zinc-900 bg-zinc-900 py-3 text-base font-bold uppercase tracking-[0.2em] text-white"
                 >
                   NASTĘPNA RUNDA
                 </button>
