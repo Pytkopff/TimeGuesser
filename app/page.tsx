@@ -121,34 +121,34 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#f5f3ee] text-zinc-900">
-      <main className="mx-auto flex min-h-screen w-full max-w-3xl flex-col gap-4 px-4 py-4 sm:gap-6 sm:px-6 sm:py-6">
-        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-300/70 pb-4">
+      <main className="mx-auto flex min-h-screen w-full max-w-3xl flex-col gap-3 px-3 py-3 sm:gap-6 sm:px-6 sm:py-6">
+        <header className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-300/70 pb-3 sm:gap-3 sm:pb-4">
           <div className="flex items-center gap-3">
-            <div className="rounded-full border-2 border-zinc-900 px-3 py-1 text-xs font-black uppercase tracking-[0.3em]">
+            <div className="rounded-full border-2 border-zinc-900 px-3 py-1 text-[10px] font-black uppercase tracking-[0.3em] sm:text-xs">
               TimeGuesser
             </div>
             <div className="hidden text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500 sm:block">
               Chrono Edition
             </div>
           </div>
-          <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.2em] text-zinc-600">
-            <span className="rounded-full border border-zinc-900 px-3 py-1">
+          <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-600 sm:gap-3 sm:text-xs">
+            <span className="rounded-full border border-zinc-900 px-2 py-1 sm:px-3">
               Runda {round}/{maxRounds}
             </span>
-            <span className="rounded-full border border-zinc-300 bg-white px-3 py-1">
+            <span className="rounded-full border border-zinc-300 bg-white px-2 py-1 sm:px-3">
               Wynik: {totalScore} pkt
             </span>
           </div>
         </header>
 
-        <section className="flex flex-col items-center gap-4 sm:gap-5">
-          <div className="w-full rounded-3xl border-2 border-zinc-900 bg-white p-3 shadow-[0_12px_0_0_rgba(0,0,0,0.12)] sm:p-4">
+        <section className="flex flex-col items-center gap-3 sm:gap-5">
+          <div className="w-full rounded-3xl border-2 border-zinc-900 bg-white p-2 shadow-[0_10px_0_0_rgba(0,0,0,0.12)] sm:p-4 sm:shadow-[0_12px_0_0_rgba(0,0,0,0.12)]">
             <div className="rounded-2xl border border-zinc-300 bg-zinc-100 p-2 sm:p-3">
               {currentPhoto ? (
                 <img
                   src={currentPhoto.image_url}
                   alt="photo"
-                  className="w-full h-auto max-h-[45vh] object-contain sm:max-h-[60vh]"
+                  className="w-full h-auto max-h-[38vh] object-contain sm:max-h-[60vh]"
                   onError={handleImageError}
                 />
               ) : (
@@ -160,20 +160,20 @@ export default function Home() {
           </div>
 
           <div className="w-full rounded-3xl border-2 border-zinc-900 bg-white px-4 py-4 shadow-[0_10px_0_0_rgba(0,0,0,0.12)] sm:px-5 sm:py-6">
-            <div className="text-center text-[10px] font-semibold uppercase tracking-[0.3em] text-zinc-500 sm:text-xs">
+            <div className="text-center text-[10px] font-semibold uppercase tracking-[0.28em] text-zinc-500 sm:text-xs">
               Your guess
             </div>
             <div className="mt-2 flex justify-center sm:mt-3">
-              <div className="rounded-2xl border-2 border-zinc-900 bg-zinc-50 px-5 py-2 text-4xl font-black tracking-tight tabular-nums shadow-[0_6px_0_0_rgba(0,0,0,0.12)] sm:px-6 sm:py-3 sm:text-5xl">
+              <div className="rounded-2xl border-2 border-zinc-900 bg-zinc-50 px-5 py-2 text-3xl font-black tracking-tight tabular-nums shadow-[0_5px_0_0_rgba(0,0,0,0.12)] sm:px-6 sm:py-3 sm:text-5xl">
                 {guessYear}
               </div>
             </div>
 
-            <div className="mt-4 flex w-full items-center gap-3 sm:mt-6">
+            <div className="mt-4 flex w-full items-center gap-2 sm:mt-6 sm:gap-3">
               <button
                 type="button"
                 onClick={() => setGuessYear((v) => clampYear(v - 1))}
-                className="h-11 w-11 rounded-full border-2 border-zinc-900 bg-white text-xl font-black sm:h-12 sm:w-12"
+                className="h-10 w-10 rounded-full border-2 border-zinc-900 bg-white text-lg font-black sm:h-12 sm:w-12 sm:text-xl"
                 aria-label="Minus one year"
               >
                 -
@@ -196,7 +196,7 @@ export default function Home() {
                       "repeating-linear-gradient(90deg, rgba(0,0,0,0.65) 0, rgba(0,0,0,0.65) 1px, transparent 1px, transparent 22px)",
                   }}
                 />
-                <div className="mt-2 flex justify-between text-[10px] font-semibold uppercase tracking-[0.25em] text-zinc-500">
+                <div className="mt-2 flex justify-between text-[9px] font-semibold uppercase tracking-[0.22em] text-zinc-500 sm:text-[10px] sm:tracking-[0.25em]">
                   <span>{minYear}</span>
                   <span>{maxYear}</span>
                 </div>
@@ -204,14 +204,14 @@ export default function Home() {
               <button
                 type="button"
                 onClick={() => setGuessYear((v) => clampYear(v + 1))}
-                className="h-11 w-11 rounded-full border-2 border-zinc-900 bg-white text-xl font-black sm:h-12 sm:w-12"
+                className="h-10 w-10 rounded-full border-2 border-zinc-900 bg-white text-lg font-black sm:h-12 sm:w-12 sm:text-xl"
                 aria-label="Plus one year"
               >
                 +
               </button>
             </div>
 
-            <div className="mt-4 text-center text-[11px] font-semibold uppercase tracking-[0.3em] text-zinc-600 sm:mt-5 sm:text-sm">
+            <div className="mt-3 text-center text-[10px] font-semibold uppercase tracking-[0.28em] text-zinc-600 sm:mt-5 sm:text-sm">
               What year was this photo taken?
             </div>
 
@@ -219,7 +219,7 @@ export default function Home() {
               type="button"
               onClick={handleConfirm}
               disabled={!currentPhoto || showResult}
-              className="mt-4 w-full rounded-2xl border-2 border-zinc-900 bg-zinc-900 py-3 text-base font-extrabold uppercase tracking-[0.25em] text-white shadow-[0_8px_0_0_rgba(0,0,0,0.2)] disabled:cursor-not-allowed disabled:opacity-50 sm:mt-5 sm:py-4 sm:text-lg"
+              className="mt-3 w-full rounded-2xl border-2 border-zinc-900 bg-zinc-900 py-3 text-sm font-extrabold uppercase tracking-[0.22em] text-white shadow-[0_7px_0_0_rgba(0,0,0,0.2)] disabled:cursor-not-allowed disabled:opacity-50 sm:mt-5 sm:py-4 sm:text-lg"
             >
               ZATWIERDŹ
             </button>
@@ -229,7 +229,7 @@ export default function Home() {
                 <div className="text-[10px] font-semibold uppercase tracking-[0.3em] text-zinc-500">
                   Podsumowanie rundy
                 </div>
-                <div className="mt-2 text-sm font-black uppercase tracking-[0.2em]">
+                <div className="mt-2 text-[11px] font-black uppercase tracking-[0.2em] sm:text-sm">
                   Photo was taken in {currentPhoto.year_true}
                 </div>
                 <div className="mt-2 text-xs text-zinc-600">
@@ -246,7 +246,7 @@ export default function Home() {
                   <button
                     type="button"
                     onClick={() => startNewGame(photos)}
-                    className="mt-4 w-full rounded-2xl border-2 border-zinc-900 bg-zinc-900 py-3 text-sm font-bold uppercase tracking-[0.2em] text-white sm:text-base"
+                    className="mt-4 w-full rounded-2xl border-2 border-zinc-900 bg-zinc-900 py-3 text-xs font-bold uppercase tracking-[0.2em] text-white sm:text-base"
                   >
                     ZAGRAJ JESZCZE RAZ
                   </button>
@@ -254,7 +254,7 @@ export default function Home() {
                   <button
                     type="button"
                     onClick={handleNextRound}
-                    className="mt-4 w-full rounded-2xl border-2 border-zinc-900 bg-white py-3 text-sm font-bold uppercase tracking-[0.2em] text-zinc-900 sm:text-base"
+                    className="mt-4 w-full rounded-2xl border-2 border-zinc-900 bg-white py-3 text-xs font-bold uppercase tracking-[0.2em] text-zinc-900 sm:text-base"
                   >
                     NASTĘPNA RUNDA
                   </button>
