@@ -96,7 +96,9 @@ export default function MintScore({ gameId, score, onMinted }: MintScoreProps) {
         >
           <div className="mt-3 flex flex-col gap-2">
             <TransactionButton text="Mint score" />
-            <TransactionStatus />
+            <TransactionStatus>
+              <div className="text-xs text-zinc-600">Transaction status will appear here</div>
+            </TransactionStatus>
           </div>
         </Transaction>
       )}
