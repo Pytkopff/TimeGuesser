@@ -13,6 +13,13 @@ const publicClient = createPublicClient({
 
 export async function POST(request: NextRequest) {
   try {
+    if (!supabaseAdmin) {
+      return NextResponse.json(
+        { error: "Supabase admin not configured. Missing env vars." },
+        { status: 500 }
+      );
+    }
+
     const body = await request.json();
     const { gameId, score, txHash, wallet } = body ?? {};
 
