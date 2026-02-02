@@ -1,24 +1,43 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+// Lazy initialization - only create client when actually needed (at runtime)
+// This prevents any Supabase client creation during build phase
+let supabaseClient: SupabaseClient | undefined;
 
-// Only create client if env vars are available
-// During build on Vercel, if vars are not set, this will be undefined
-// which is OK - the client will be created at runtime when vars are available
-let supabase: SupabaseClient | undefined;
-
-if (supabaseUrl && supabaseAnonKey) {
-  try {
-    supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      auth: { persistSession: false },
-    });
-  } catch (error) {
-    // Silently fail during build - will work at runtime
-    console.warn("Failed to create Supabase client during build:", error);
+function getSupabaseClient(): SupabaseClient {
+  if (supabaseClient) {
+    return supabaseClient;
   }
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error(
+      "Missing Supabase env vars. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY."
+    );
+  }
+
+  // Validate URL format
+  try {
+    new URL(supabaseUrl);
+  } catch {
+    throw new Error(`Invalid Supabase URL: ${supabaseUrl}`);
+  }
+
+  supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+    auth: { persistSession: false },
+  });
+
+  return supabaseClient;
 }
 
-// Export - will be undefined during build if env vars are missing, but that's OK
-// Client components will handle this gracefully
-export { supabase };
+// Export a proxy that lazily creates the client only when accessed
+// This ensures no client is created during build phase
+export const supabase = new Proxy({} as SupabaseClient, {
+  get(_target, prop) {
+    const client = getSupabaseClient();
+    const value = client[prop as keyof SupabaseClient];
+    return typeof value === "function" ? value.bind(client) : value;
+  },
+});
