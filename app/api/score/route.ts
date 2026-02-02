@@ -20,6 +20,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // TypeScript type narrowing - after the check above, supabaseAdmin is guaranteed to be non-null
+    // Use type assertion since Supabase types are not fully generated
+    const admin = supabaseAdmin as ReturnType<typeof import("@supabase/supabase-js").createClient>;
+
     const body = await request.json();
     const { gameId, score, txHash, wallet } = body ?? {};
 
@@ -60,7 +64,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    await supabaseAdmin.from("users").upsert(
+    // TypeScript doesn't know about our Supabase table types, so we use 'as any'
+    await (admin.from("users") as any).upsert(
       {
         canonical_user_id: wallet.toLowerCase(),
         wallet: wallet.toLowerCase(),
@@ -68,7 +73,7 @@ export async function POST(request: NextRequest) {
       { onConflict: "canonical_user_id" }
     );
 
-    const { error: gameError } = await supabaseAdmin.from("games").insert({
+    const { error: gameError } = await (admin.from("games") as any).insert({
       id: gameId,
       canonical_user_id: wallet.toLowerCase(),
       ended_at: new Date().toISOString(),
@@ -79,7 +84,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: gameError.message }, { status: 500 });
     }
 
-    const { error: mintError } = await supabaseAdmin.from("mints").insert({
+    const { error: mintError } = await (admin.from("mints") as any).insert({
       game_id: gameId,
       tx_hash: txHash,
       chain_id: base.id,
