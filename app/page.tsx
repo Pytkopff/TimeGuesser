@@ -70,17 +70,8 @@ export default function Home() {
   useEffect(() => {
     const fetchPhotos = async () => {
       try {
-        // Check if Supabase env vars are available
-        const hasEnvVars = 
-          typeof window !== "undefined" && 
-          (process.env.NEXT_PUBLIC_SUPABASE_URL || 
-           (window as any).__NEXT_DATA__?.env?.NEXT_PUBLIC_SUPABASE_URL);
-
-        if (!hasEnvVars) {
-          console.error("⚠️ Supabase environment variables not found. Check Vercel settings.");
-          return;
-        }
-
+        console.log("🔍 Fetching photos from Supabase...");
+        
         const { data, error } = await supabase
           .from("photos")
           .select("id,image_url,title,year_true,year_min,year_max");
@@ -91,6 +82,7 @@ export default function Home() {
             message: error.message,
             details: error.details,
             hint: error.hint,
+            code: error.code,
           });
           return;
         }
@@ -99,6 +91,7 @@ export default function Home() {
 
         if (data && data.length > 0) {
           const loaded = data as Photo[];
+          console.log("📸 Loaded photos:", loaded.map(p => ({ id: p.id, title: p.title, year: p.year_true })));
           setPhotos(loaded);
           startNewGame(loaded);
         } else {
@@ -108,6 +101,7 @@ export default function Home() {
         console.error("❌ Failed to fetch photos:", err);
         if (err instanceof Error) {
           console.error("Error message:", err.message);
+          console.error("Error stack:", err.stack);
         }
       }
     };

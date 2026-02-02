@@ -9,21 +9,32 @@ function getSupabaseClient(): SupabaseClient {
     return supabaseClient;
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  // In Next.js, NEXT_PUBLIC_* vars are available at build time and injected into the bundle
+  // But we need to check if they're actually available in the browser
+  const supabaseUrl = 
+    typeof window !== "undefined" 
+      ? (window as any).__NEXT_DATA__?.env?.NEXT_PUBLIC_SUPABASE_URL || 
+        process.env.NEXT_PUBLIC_SUPABASE_URL
+      : process.env.NEXT_PUBLIC_SUPABASE_URL;
+      
+  const supabaseAnonKey = 
+    typeof window !== "undefined"
+      ? (window as any).__NEXT_DATA__?.env?.NEXT_PUBLIC_SUPABASE_ANON_KEY || 
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      : process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
+    console.error("❌ Supabase env vars missing:", {
+      url: supabaseUrl ? "✅" : "❌",
+      key: supabaseAnonKey ? "✅" : "❌",
+    });
     throw new Error(
-      "Missing Supabase env vars. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY."
+      "Missing Supabase env vars. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY on Vercel."
     );
   }
 
-  // Validate URL format
-  try {
-    new URL(supabaseUrl);
-  } catch {
-    throw new Error(`Invalid Supabase URL: ${supabaseUrl}`);
-  }
+  // Let Supabase client validate the URL - don't validate here
+  console.log("✅ Creating Supabase client with URL:", supabaseUrl.substring(0, 40) + "...");
 
   supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
     auth: { persistSession: false },
