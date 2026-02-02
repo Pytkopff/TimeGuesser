@@ -70,6 +70,11 @@ export default function Home() {
   useEffect(() => {
     const fetchPhotos = async () => {
       try {
+        if (!supabase) {
+          console.error("❌ Supabase client not initialized. Check environment variables.");
+          return;
+        }
+
         console.log("🔍 Fetching photos from Supabase...");
         
         const { data, error } = await supabase
