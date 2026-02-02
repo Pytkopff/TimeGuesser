@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import MintScore from "@/components/MintScore";
 
 type Photo = {
   id: string;
@@ -23,6 +24,8 @@ export default function Home() {
   const [usedPhotoIds, setUsedPhotoIds] = useState<string[]>([]);
   const [failedPhotoIds, setFailedPhotoIds] = useState<string[]>([]);
   const [isZoomed, setIsZoomed] = useState(false);
+  const [gameId, setGameId] = useState(() => crypto.randomUUID());
+  const [hasMinted, setHasMinted] = useState(false);
 
   const minYear = 1900;
   const maxYear = useMemo(() => new Date().getFullYear(), []);
@@ -60,6 +63,8 @@ export default function Home() {
     setLastScore(0);
     setTotalScore(0);
     setRound(1);
+    setGameId(crypto.randomUUID());
+    setHasMinted(false);
   };
 
   useEffect(() => {
@@ -85,7 +90,7 @@ export default function Home() {
 
   const handleConfirm = () => {
     if (!currentPhoto) return;
-    const delta = Math.abs(currentPhoto.year_true - guessYear);
+    const delta = Math.abs((currentPhoto?.year_true ?? guessYear) - guessYear);
     const score = Math.max(0, 1000 - delta * 10);
     setLastScore(score);
     setTotalScore((prev) => prev + score);
@@ -147,7 +152,7 @@ export default function Home() {
             <div className="relative rounded-2xl border border-zinc-300 bg-zinc-100 p-2 sm:p-3">
               {currentPhoto ? (
                 <img
-                  src={currentPhoto.image_url}
+                  src={currentPhoto?.image_url}
                   alt="photo"
                   className="w-full h-auto max-h-[38vh] object-contain sm:max-h-[60vh]"
                   onError={handleImageError}
@@ -242,7 +247,7 @@ export default function Home() {
                   Round summary
                 </div>
                 <div className="mt-2 text-[11px] font-black uppercase tracking-[0.2em] sm:text-sm">
-                  Photo was taken in {currentPhoto.year_true}
+                  Photo was taken in {currentPhoto?.year_true}
                 </div>
                 <div className="mt-2 text-xs text-zinc-600">
                   Your guess: <span className="font-semibold text-zinc-900">{guessYear}</span>
@@ -255,13 +260,26 @@ export default function Home() {
                 </div>
 
                 {isGameOver ? (
-                  <button
-                    type="button"
-                    onClick={() => startNewGame(photos)}
-                    className="mt-4 w-full rounded-2xl border-2 border-zinc-900 bg-zinc-900 py-3 text-xs font-bold uppercase tracking-[0.2em] text-white sm:text-base"
-                  >
-                    Play again
-                  </button>
+                  <>
+                    {!hasMinted ? (
+                      <MintScore
+                        gameId={gameId}
+                        score={totalScore}
+                        onMinted={() => setHasMinted(true)}
+                      />
+                    ) : (
+                      <div className="mt-3 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">
+                        Onchain verified. Leaderboard unlocked.
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => startNewGame(photos)}
+                      className="mt-4 w-full rounded-2xl border-2 border-zinc-900 bg-zinc-900 py-3 text-xs font-bold uppercase tracking-[0.2em] text-white sm:text-base"
+                    >
+                      Play again
+                    </button>
+                  </>
                 ) : (
                   <button
                     type="button"
@@ -281,7 +299,7 @@ export default function Home() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
           <div className="relative w-full max-w-2xl">
             <img
-              src={currentPhoto.image_url}
+              src={currentPhoto?.image_url}
               alt="photo zoomed"
               className="w-full h-auto max-h-[85vh] object-contain rounded-2xl border-2 border-white bg-black"
             />

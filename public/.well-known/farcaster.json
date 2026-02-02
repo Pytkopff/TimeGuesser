@@ -1,0 +1,18 @@
+{
+  "accountAssociation": {
+    "header": "",
+    "payload": "",
+    "signature": ""
+  },
+  "frame": {
+    "version": "next",
+    "name": "TimeGuesser",
+    "homeUrl": "https://time-guesser-three.vercel.app",
+    "iconUrl": "https://time-guesser-three.vercel.app/miniapp-icon",
+    "imageUrl": "https://time-guesser-three.vercel.app/miniapp-image",
+    "buttonTitle": "Play TimeGuesser",
+    "splashImageUrl": "https://time-guesser-three.vercel.app/miniapp-icon",
+    "splashBackgroundColor": "#f5f3ee",
+    "canonicalDomain": "time-guesser-three.vercel.app"
+  }
+}
