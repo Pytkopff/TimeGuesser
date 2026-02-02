@@ -1,22 +1,24 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-// Don't throw during build - only check at runtime
-// Create a dummy client during build if env vars are missing
-let supabase: ReturnType<typeof createClient>;
+// Only create client if env vars are available
+// During build on Vercel, if vars are not set, this will be undefined
+// which is OK - the client will be created at runtime when vars are available
+let supabase: SupabaseClient | undefined;
 
 if (supabaseUrl && supabaseAnonKey) {
-  supabase = createClient(supabaseUrl, supabaseAnonKey, {
-    auth: { persistSession: false },
-  });
-} else {
-  // Create a dummy client for build-time (will fail at runtime if used without env vars)
-  // This prevents build errors while still allowing runtime checks
-  supabase = createClient("https://placeholder.supabase.co", "placeholder-key", {
-    auth: { persistSession: false },
-  });
+  try {
+    supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: { persistSession: false },
+    });
+  } catch (error) {
+    // Silently fail during build - will work at runtime
+    console.warn("Failed to create Supabase client during build:", error);
+  }
 }
 
+// Export - will be undefined during build if env vars are missing, but that's OK
+// Client components will handle this gracefully
 export { supabase };

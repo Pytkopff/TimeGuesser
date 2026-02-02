@@ -69,6 +69,11 @@ export default function Home() {
 
   useEffect(() => {
     const fetchPhotos = async () => {
+      if (!supabase) {
+        console.error("Supabase client not initialized. Check environment variables.");
+        return;
+      }
+
       const { data, error } = await supabase
         .from("photos")
         .select("id,image_url,title,year_true,year_min,year_max");
