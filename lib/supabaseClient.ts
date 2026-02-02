@@ -1,28 +1,42 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+// Lazy initialization - create client only when needed (at runtime in browser)
+let supabaseClient: SupabaseClient | undefined;
 
-// Create client only if env vars are available
-// During build, if vars are not set, this will be undefined
-// which is OK - the client will be created at runtime when vars are available
-let supabase: SupabaseClient | undefined;
+export function getSupabaseClient(): SupabaseClient {
+  if (supabaseClient) {
+    return supabaseClient;
+  }
 
-if (supabaseUrl && supabaseAnonKey) {
-  // Trim whitespace just in case
+  // In Next.js, NEXT_PUBLIC_* vars are injected at build time
+  // They should be available in the browser bundle
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    const errorMsg = "Missing Supabase env vars. Check Vercel settings.";
+    console.error("❌", errorMsg, {
+      hasUrl: !!supabaseUrl,
+      hasKey: !!supabaseAnonKey,
+    });
+    throw new Error(errorMsg);
+  }
+
+  // Trim whitespace
   const cleanUrl = supabaseUrl.trim();
   const cleanKey = supabaseAnonKey.trim();
-  
-  try {
-    supabase = createClient(cleanUrl, cleanKey, {
-      auth: { persistSession: false },
-    });
-  } catch (error) {
-    // Silently fail during build - will work at runtime
-    console.warn("Failed to create Supabase client:", error);
-  }
+
+  console.log("✅ Creating Supabase client...");
+  supabaseClient = createClient(cleanUrl, cleanKey, {
+    auth: { persistSession: false },
+  });
+
+  return supabaseClient;
 }
 
-// Export - will be undefined during build if env vars are missing, but that's OK
-// Client components will handle this gracefully
-export { supabase };
+// Export a getter that creates client on first access
+export const supabase = {
+  get from() {
+    return getSupabaseClient().from.bind(getSupabaseClient());
+  },
+} as SupabaseClient;

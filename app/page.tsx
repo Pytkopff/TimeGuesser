@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { getSupabaseClient } from "@/lib/supabaseClient";
 import MintScore from "@/components/MintScore";
 
 type Photo = {
@@ -70,13 +70,9 @@ export default function Home() {
   useEffect(() => {
     const fetchPhotos = async () => {
       try {
-        if (!supabase) {
-          console.error("❌ Supabase client not initialized. Check environment variables.");
-          return;
-        }
-
         console.log("🔍 Fetching photos from Supabase...");
         
+        const supabase = getSupabaseClient();
         const { data, error } = await supabase
           .from("photos")
           .select("id,image_url,title,year_true,year_min,year_max");
