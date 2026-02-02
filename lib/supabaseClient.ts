@@ -36,8 +36,28 @@ function getSupabaseClient(): SupabaseClient {
 // This ensures no client is created during build phase
 export const supabase = new Proxy({} as SupabaseClient, {
   get(_target, prop) {
-    const client = getSupabaseClient();
-    const value = client[prop as keyof SupabaseClient];
-    return typeof value === "function" ? value.bind(client) : value;
+    try {
+      const client = getSupabaseClient();
+      const value = client[prop as keyof SupabaseClient];
+      return typeof value === "function" ? value.bind(client) : value;
+    } catch (error) {
+      // If client creation fails (e.g., missing env vars), return a mock object
+      // that will throw a helpful error when methods are called
+      if (prop === "from") {
+        return () => ({
+          select: () => ({
+            then: (onResolve: any, onReject: any) => {
+              onReject?.(error);
+              return Promise.reject(error);
+            },
+            catch: (onReject: any) => {
+              onReject?.(error);
+              return Promise.reject(error);
+            },
+          }),
+        });
+      }
+      throw error;
+    }
   },
 });

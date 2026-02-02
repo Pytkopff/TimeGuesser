@@ -69,24 +69,46 @@ export default function Home() {
 
   useEffect(() => {
     const fetchPhotos = async () => {
-      if (!supabase) {
-        console.error("Supabase client not initialized. Check environment variables.");
-        return;
-      }
+      try {
+        // Check if Supabase env vars are available
+        const hasEnvVars = 
+          typeof window !== "undefined" && 
+          (process.env.NEXT_PUBLIC_SUPABASE_URL || 
+           (window as any).__NEXT_DATA__?.env?.NEXT_PUBLIC_SUPABASE_URL);
 
-      const { data, error } = await supabase
-        .from("photos")
-        .select("id,image_url,title,year_true,year_min,year_max");
+        if (!hasEnvVars) {
+          console.error("⚠️ Supabase environment variables not found. Check Vercel settings.");
+          return;
+        }
 
-      if (error) {
-        console.error("Supabase error:", error);
-        return;
-      }
+        const { data, error } = await supabase
+          .from("photos")
+          .select("id,image_url,title,year_true,year_min,year_max");
 
-      if (data && data.length > 0) {
-        const loaded = data as Photo[];
-        setPhotos(loaded);
-        startNewGame(loaded);
+        if (error) {
+          console.error("❌ Supabase error:", error);
+          console.error("Error details:", {
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+          });
+          return;
+        }
+
+        console.log("✅ Photos fetched:", data?.length || 0, "photos");
+
+        if (data && data.length > 0) {
+          const loaded = data as Photo[];
+          setPhotos(loaded);
+          startNewGame(loaded);
+        } else {
+          console.warn("⚠️ No photos found in database. Make sure photos are uploaded.");
+        }
+      } catch (err) {
+        console.error("❌ Failed to fetch photos:", err);
+        if (err instanceof Error) {
+          console.error("Error message:", err.message);
+        }
       }
     };
 
