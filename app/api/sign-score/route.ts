@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { keccak256, toBytes, toHex, encodePacked } from "viem";
+import { keccak256, encodePacked, hashMessage, toBytes } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { signMessage } from "viem";
+import { sign } from "viem/accounts";
 
 // Get validator private key from environment
 const VALIDATOR_PRIVATE_KEY = process.env.VALIDATOR_PRIVATE_KEY;
@@ -34,9 +34,8 @@ export async function POST(request: NextRequest) {
     // Create validator account from private key
     const account = privateKeyToAccount(VALIDATOR_PRIVATE_KEY as `0x${string}`);
 
-    // Create message hash: keccak256(abi.encodePacked(gameId, score, player))
-    // Must match exactly what contract expects!
-    // Contract does: keccak256(abi.encodePacked(gameId, score, msg.sender))
+    // Step 1: Create message hash exactly as contract does
+    // Contract: keccak256(abi.encodePacked(gameId, score, msg.sender))
     const messageHash = keccak256(
       encodePacked(
         ["string", "uint256", "address"],
@@ -44,13 +43,14 @@ export async function POST(request: NextRequest) {
       )
     );
 
-    // Sign the message with Ethereum message prefix
-    // Contract uses MessageHashUtils.toEthSignedMessageHash which adds prefix
-    const signature = await signMessage({
-      account,
-      message: {
-        raw: toBytes(messageHash),
-      },
+    // Step 2: Add Ethereum message prefix (same as MessageHashUtils.toEthSignedMessageHash)
+    // This adds "\x19Ethereum Signed Message:\n32" prefix
+    const ethSignedMessageHash = hashMessage({ raw: toBytes(messageHash) });
+
+    // Step 3: Sign the hash with private key
+    const signature = await sign({
+      hash: ethSignedMessageHash,
+      privateKey: VALIDATOR_PRIVATE_KEY as `0x${string}`,
     });
 
     return NextResponse.json({
