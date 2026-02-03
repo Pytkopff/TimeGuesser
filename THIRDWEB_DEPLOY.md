@@ -1,10 +1,12 @@
-# 🚀 Wdrożenie przez Thirdweb - Najprostsza Metoda!
+# 🚀 Wdrożenie przez Thirdweb CLI - Prosta Metoda
 
-## ⚡ **Szybki Start (3 kroki):**
+**⚠️ UWAGA:** Thirdweb Dashboard nie ma opcji wdrożenia custom kontraktów - trzeba użyć CLI lub API.
 
-1. **Zaloguj się do Thirdweb Dashboard**
-2. **Wklej kod kontraktu**
-3. **Wdróż na Base Mainnet**
+**💡 REKOMENDACJA:** Użyj **Remix** (patrz `DEPLOY_SIMPLE.md`) - to najprostsze, bez CLI!
+
+---
+
+## ⚡ **Jeśli chcesz użyć Thirdweb CLI (opcjonalne):**
 
 ---
 
