@@ -1,10 +1,10 @@
-# 🚀 PROMPT DO GEMINI: Wdrożenie TimeGuesserRanking na Base Mainnet przez Remix
+# 🚀 PROMPT DO GEMINI: Wdrożenie TimeGuesserRanking (z OpenZeppelin) na Base Mainnet przez Remix
 
 Skopiuj poniższy prompt i wklej do Gemini:
 
 ---
 
-**Jestem developerem i chcę wdrożyć smart kontrakt Solidity na Base Mainnet przez Remix IDE. Pomóż mi krok po kroku.**
+**Jestem developerem i chcę wdrożyć smart kontrakt Solidity z OpenZeppelin na Base Mainnet przez Remix IDE. Kontrakt używa signature verification i wymaga OpenZeppelin dependencies. Pomóż mi krok po kroku.**
 
 ## MÓJ KONTRAKT:
 
@@ -120,9 +120,18 @@ contract TimeGuesserRanking {
 
 - ✅ **Event-based architecture** - kontrakt tylko emituje eventy, leaderboard jest budowany off-chain (Supabase)
 - ✅ **Gas efficient** - minimalne storage (tylko bestScore per player), nie przechowuje wszystkich wyników
+- ✅ **Security** - signature verification zapobiega manipulacji wyników (backend podpisuje każdy wynik)
+- ✅ **Replay protection** - `usedGameIds` zapobiega użyciu tego samego gameId dwa razy
+- ✅ **Pausable** - owner może zatrzymać kontrakt w razie problemów
 - ✅ **Skalowalny** - gotowy na miliony gier (wszystkie dane w eventach)
 - ✅ **Gotowy do The Graph** - eventy są indeksowane off-chain
-- ✅ **Professional pattern** - tak robią najlepsze aplikacje (Uniswap, Aave, etc.)
+- ✅ **Professional pattern** - używa OpenZeppelin (industry standard)
+
+## WAŻNE INFORMACJE:
+
+- **Kontrakt wymaga OpenZeppelin** - muszę zainstalować `@openzeppelin/contracts` w Remix
+- **Kontrakt ma konstruktor** - potrzebuję `validatorAddress` (adres backend servera, który podpisuje wyniki)
+- **Kontrakt używa signature verification** - backend musi podpisać każdy wynik przed mintowaniem
 
 ## MOJE PYTANIA:
 

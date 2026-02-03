@@ -9,6 +9,7 @@ export const SCORE_CONTRACT_ABI = [
     inputs: [
       { name: "gameId", type: "string" },
       { name: "score", type: "uint256" },
+      { name: "signature", type: "bytes" },
     ],
     outputs: [],
   },
@@ -50,5 +51,40 @@ export const SCORE_CONTRACT_ABI = [
     stateMutability: "view",
     inputs: [{ name: "", type: "address" }],
     outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "usedGameIds",
+    stateMutability: "view",
+    inputs: [{ name: "", type: "string" }],
+    outputs: [{ name: "", type: "bool" }],
+  },
+  {
+    type: "function",
+    name: "validatorAddress",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "address" }],
+  },
+  {
+    type: "function",
+    name: "setValidatorAddress",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "_newValidator", type: "address" }],
+    outputs: [],
+  },
+  {
+    type: "function",
+    name: "pause",
+    stateMutability: "nonpayable",
+    inputs: [],
+    outputs: [],
+  },
+  {
+    type: "function",
+    name: "unpause",
+    stateMutability: "nonpayable",
+    inputs: [],
+    outputs: [],
   },
 ] as const;
