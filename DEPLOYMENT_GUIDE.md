@@ -2,31 +2,38 @@
 
 ## 📋 **PRZED WDROŻENIEM**
 
-### 1. **Wygeneruj Validator Private Key**
+### 1. **Pobierz Private Key z Twojego Portfela**
 
-Kontrakt wymaga adresu validatora, który będzie podpisywał wyniki. Musisz wygenerować nowy portfel:
+Kontrakt wymaga adresu validatora, który będzie podpisywał wyniki. **Możesz użyć swojego głównego portfela!**
 
-```bash
-# Opcja 1: Użyj MetaMask/Coinbase Wallet
-# Stwórz nowy portfel tylko dla validatora
-# Skopiuj PRIVATE KEY (nie seed phrase!)
+**Jak pobrać Private Key:**
 
-# Opcja 2: Użyj Node.js
-node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-# To wygeneruje 64-znakowy hex string (dodaj 0x na początku)
-```
+**MetaMask:**
+1. Otwórz MetaMask
+2. Kliknij na 3 kropki (menu) → **"Account details"**
+3. Kliknij **"Export Private Key"**
+4. Wpisz hasło
+5. **SKOPIUJ PRIVATE KEY** (zaczyna się od `0x`)
+
+**Coinbase Wallet:**
+1. Otwórz Coinbase Wallet
+2. Settings → **"Show Recovery Phrase"** (lub użyj eksportu private key jeśli dostępny)
+3. **UWAGA:** Jeśli nie ma opcji eksportu private key, możesz użyć seed phrase do wygenerowania (ale lepiej użyj MetaMask)
 
 **WAŻNE:**
-- ⚠️ **NIGDY nie używaj tego samego klucza co do wdrożenia kontraktu!**
-- ⚠️ **Zapisz private key bezpiecznie (Vercel env vars)**
-- ⚠️ **Ten portfel nie potrzebuje ETH - tylko podpisuje wiadomości**
+- ✅ **Możesz użyć swojego głównego portfela** - nie musisz tworzyć nowego
+- ⚠️ **Zapisz private key bezpiecznie** - tylko w Vercel env vars, NIGDY w kodzie!
+- ⚠️ **Ten portfel nie potrzebuje ETH na Base** - tylko podpisuje wiadomości (nie wysyła transakcji)
 
-### 2. **Pobierz Validator Address**
+### 2. **Pobierz Adres z Private Key**
 
-Z private key wygeneruj adres:
+Z private key wygeneruj adres (to jest Twój `validatorAddress`):
 
+**Opcja 1: W przeglądarce (MetaMask)**
+- Twój adres to po prostu adres portfela w MetaMask (kopiuj z góry)
+
+**Opcja 2: W Node.js (jeśli chcesz sprawdzić)**
 ```javascript
-// W Remix lub Node.js
 const { privateKeyToAccount } = require('viem/accounts');
 const account = privateKeyToAccount('0xTWÓJ_PRIVATE_KEY');
 console.log(account.address); // To jest validatorAddress
@@ -68,10 +75,10 @@ console.log(account.address); // To jest validatorAddress
 2. **Environment:** `Injected Provider - MetaMask` (lub Coinbase Wallet)
 3. **WAŻNE:** Upewnij się, że portfel jest na **Base Mainnet**!
 4. W sekcji **"Deploy"** wpisz:
-   - **Constructor args:** `0xTWÓJ_VALIDATOR_ADDRESS` (adres z kroku 2)
+   - **Constructor args:** `0xTWÓJ_ADRES_PORTFELA` (Twój adres z MetaMask - ten sam, z którego masz private key!)
 5. Kliknij **"Deploy"**
 6. Potwierdź transakcję w portfelu
-7. ⏳ Poczekaj na potwierdzenie
+7. ⏳ Poczekaj na potwierdzenie (zwykle 1-2 sekundy na Base!)
 
 ### 1.5 Zapisz Adres Kontraktu
 
@@ -106,14 +113,15 @@ W [Vercel Dashboard](https://vercel.com/dashboard):
 2. Dodaj:
 
 ```
-VALIDATOR_PRIVATE_KEY=0xTWÓJ_PRIVATE_KEY_64_ZNACKI
+VALIDATOR_PRIVATE_KEY=0xTWÓJ_PRIVATE_KEY_Z_METAMASK
 NEXT_PUBLIC_SCORE_CONTRACT_ADDRESS=0xADRES_KONTRAKTU
 ```
 
 **WAŻNE:**
-- ⚠️ `VALIDATOR_PRIVATE_KEY` musi zaczynać się od `0x`
-- ⚠️ To jest **SECRET** - nie commituj do gita!
-- ⚠️ Użyj tego samego klucza, z którego wygenerowałeś `validatorAddress` w konstruktorze
+- ✅ `VALIDATOR_PRIVATE_KEY` - to jest Twój private key z MetaMask (ten sam portfel, który użyłeś w konstruktorze!)
+- ✅ `NEXT_PUBLIC_SCORE_CONTRACT_ADDRESS` - adres kontraktu z Remix
+- ⚠️ To są **SECRETS** - nie commituj do gita!
+- ⚠️ Private key musi zaczynać się od `0x` i mieć 66 znaków (0x + 64 hex)
 
 ### 3.2 Redeploy
 
