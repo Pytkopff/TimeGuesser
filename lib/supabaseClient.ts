@@ -14,13 +14,13 @@ export function getSupabaseClient(): SupabaseClient {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   // Debug: log what we actually have
+  const rawUrlPreview = supabaseUrl ? JSON.stringify(supabaseUrl.substring(0, 50)) : "undefined";
   console.log("🔍 Debug Supabase env vars:", {
     urlType: typeof supabaseUrl,
     urlLength: supabaseUrl?.length || 0,
-    urlPreview: supabaseUrl ? supabaseUrl.substring(0, 50) + "..." : "undefined",
+    urlPreview: rawUrlPreview,
     keyType: typeof supabaseAnonKey,
     keyLength: supabaseAnonKey?.length || 0,
-    allEnvKeys: Object.keys(process.env).filter(k => k.startsWith('NEXT_PUBLIC_')),
   });
 
   if (!supabaseUrl || !supabaseAnonKey) {
@@ -34,13 +34,18 @@ export function getSupabaseClient(): SupabaseClient {
     throw new Error(errorMsg);
   }
 
-  // Trim whitespace
-  const cleanUrl = supabaseUrl.trim();
-  const cleanKey = supabaseAnonKey.trim();
+  // Trim whitespace and remove surrounding quotes (in case env vars have quotes)
+  const cleanUrl = supabaseUrl.trim().replace(/^["']|["']$/g, '');
+  const cleanKey = supabaseAnonKey.trim().replace(/^["']|["']$/g, '');
+
+  console.log("🧹 After cleaning:", {
+    cleanUrlPreview: cleanUrl.substring(0, 50),
+    cleanUrlStartsWith: cleanUrl.substring(0, 8),
+  });
 
   // Validate URL format before creating client
   if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
-    console.error("❌ Invalid URL format:", cleanUrl);
+    console.error("❌ Invalid URL format:", JSON.stringify(cleanUrl));
     throw new Error(`Invalid Supabase URL format: must start with http:// or https://`);
   }
 
