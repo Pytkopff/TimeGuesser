@@ -1,3 +1,14 @@
+# 🚀 PROMPT DO GEMINI: Wdrożenie TimeGuesserRanking na Base Mainnet przez Remix
+
+Skopiuj poniższy prompt i wklej do Gemini:
+
+---
+
+**Jestem developerem i chcę wdrożyć smart kontrakt Solidity na Base Mainnet przez Remix IDE. Pomóż mi krok po kroku.**
+
+## MÓJ KONTRAKT:
+
+```solidity
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
@@ -97,3 +108,52 @@ contract TimeGuesserRanking {
         return totalGames[player];
     }
 }
+```
+
+## CO CHCĘ ZROBIĆ:
+
+1. **Wdrożyć kontrakt na Base Mainnet** przez Remix IDE
+2. **Zweryfikować kontrakt** na BaseScan
+3. **Uzyskać adres kontraktu** do użycia w aplikacji
+
+## DLACZEGO TEN KONTRAKT JEST PROFESJONALNY:
+
+- ✅ **Event-based architecture** - kontrakt tylko emituje eventy, leaderboard jest budowany off-chain (Supabase)
+- ✅ **Gas efficient** - minimalne storage (tylko bestScore per player), nie przechowuje wszystkich wyników
+- ✅ **Skalowalny** - gotowy na miliony gier (wszystkie dane w eventach)
+- ✅ **Gotowy do The Graph** - eventy są indeksowane off-chain
+- ✅ **Professional pattern** - tak robią najlepsze aplikacje (Uniswap, Aave, etc.)
+
+## MOJE PYTANIA:
+
+1. **Jak skonfigurować Remix IDE do wdrożenia na Base Mainnet?**
+   - Jakie RPC URL użyć dla Base?
+   - Jakie ustawienia kompilatora (Solidity version, EVM version)?
+
+2. **Jak połączyć Remix z portfelem (np. Coinbase Wallet)?**
+   - Krok po kroku: jak dodać Base network do portfela?
+   - Jakie środki potrzebuję na Base Mainnet? (ile ETH na gas?)
+
+3. **Jak wdrożyć kontrakt przez Remix?**
+   - Który plik wkleić do Remix?
+   - Jakie parametry konstruktora? (ten kontrakt nie ma konstruktora)
+   - Jak potwierdzić transakcję w portfelu?
+
+4. **Jak zweryfikować kontrakt na BaseScan?**
+   - Krok po kroku: jak użyć BaseScan verification?
+   - Jakie dane podać (Solidity version, optimization, etc.)?
+
+5. **Jak przetestować kontrakt po wdrożeniu?**
+   - Jak wywołać `mintScore` przez Remix?
+   - Jak sprawdzić, czy event `ScoreMinted` został wyemitowany?
+
+## DODATKOWE INFORMACJE:
+
+- **Network:** Base Mainnet (Chain ID: 8453)
+- **RPC URL:** https://mainnet.base.org (public) lub użyj własnego z Alchemy/Infura
+- **Explorer:** https://basescan.org
+- **Gas:** Szacuję ~0.001-0.01 ETH na Base (tanie!)
+
+**Prowadź mnie krok po kroku, jakbym był początkujący. Daj mi konkretne instrukcje, które mogę skopiować i wkleić.**
+
+---

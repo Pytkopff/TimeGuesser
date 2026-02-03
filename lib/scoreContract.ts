@@ -12,4 +12,43 @@ export const SCORE_CONTRACT_ABI = [
     ],
     outputs: [],
   },
+  {
+    type: "event",
+    name: "ScoreMinted",
+    inputs: [
+      { name: "player", type: "address", indexed: true },
+      { name: "gameId", type: "string", indexed: true },
+      { name: "score", type: "uint256", indexed: false },
+      { name: "timestamp", type: "uint256", indexed: false },
+      { name: "isNewBest", type: "bool", indexed: false },
+    ],
+  },
+  {
+    type: "function",
+    name: "getPlayerBestScore",
+    stateMutability: "view",
+    inputs: [{ name: "player", type: "address" }],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "getPlayerTotalGames",
+    stateMutability: "view",
+    inputs: [{ name: "player", type: "address" }],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "bestScore",
+    stateMutability: "view",
+    inputs: [{ name: "", type: "address" }],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "totalGames",
+    stateMutability: "view",
+    inputs: [{ name: "", type: "address" }],
+    outputs: [{ name: "", type: "uint256" }],
+  },
 ] as const;
