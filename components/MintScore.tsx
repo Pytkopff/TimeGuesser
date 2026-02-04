@@ -13,16 +13,28 @@ type MintScoreProps = {
 };
 
 export default function MintScore({ gameId, score, onMinted }: MintScoreProps) {
-  const { address } = useAccount();
+  const { address, chainId: accountChainId } = useAccount();
   const [mintError, setMintError] = useState<string | null>(null);
   const [isLoadingSignature, setIsLoadingSignature] = useState(false);
   const [signature, setSignature] = useState<`0x${string}` | null>(null);
   const [isSwitchingChain, setIsSwitchingChain] = useState(false);
   const [pendingMint, setPendingMint] = useState(false); // Flag to track if we're waiting to mint after chain switch
   
-  // Check current chain and switch if needed
-  const chainId = useChainId();
+  // Check current chain - use both useChainId and account chainId for reliability
+  const chainIdFromHook = useChainId();
+  const chainId = accountChainId || chainIdFromHook; // Prefer account chainId as it's more reliable
   const { switchChain, isPending: isSwitching } = useSwitchChain();
+  
+  // Debug: log chain changes
+  useEffect(() => {
+    console.log("🔗 Chain ID changed:", {
+      accountChainId,
+      chainIdFromHook,
+      finalChainId: chainId,
+      baseId: base.id,
+      isOnBase: chainId === base.id,
+    });
+  }, [accountChainId, chainIdFromHook, chainId]);
   
   // Use wagmi's useWriteContract for direct contract interaction
   const { 
@@ -149,40 +161,76 @@ export default function MintScore({ gameId, score, onMinted }: MintScoreProps) {
     }
 
     // Otherwise, switch chain first and set pending flag
-    console.log("🔄 Switching to Base network...");
+    console.log("🔄 Switching to Base network...", {
+      currentChainId: chainId,
+      targetChainId: base.id,
+    });
     setIsSwitchingChain(true);
     setPendingMint(true);
     setMintError(null);
     
     try {
-      await switchChain({ chainId: base.id });
+      const result = await switchChain({ chainId: base.id });
+      console.log("✅ switchChain called, waiting for chain to change...", result);
       // Don't execute mint here - wait for chainId to change in useEffect
-    } catch (err) {
+    } catch (err: any) {
       console.error("❌ Failed to switch chain:", err);
       setIsSwitchingChain(false);
       setPendingMint(false);
-      setMintError("Please switch to Base network in your wallet");
+      
+      // More specific error message
+      if (err?.message?.includes("user rejected") || err?.code === 4001) {
+        setMintError("Chain switch was rejected. Please switch to Base network manually in your wallet.");
+      } else if (err?.message?.includes("not added")) {
+        setMintError("Base network is not added to your wallet. Please add Base network manually.");
+      } else {
+        setMintError("Please switch to Base network in your wallet manually.");
+      }
     }
   };
 
   // Auto-execute mint when chain switches to Base and we have pending mint
   useEffect(() => {
+    console.log("🔍 Checking if should execute mint:", {
+      pendingMint,
+      chainId,
+      isBase: chainId === base.id,
+      isSwitching,
+      hasAddress: !!SCORE_CONTRACT_ADDRESS,
+      hasSignature: !!signature,
+      hasWallet: !!address,
+    });
+
     if (pendingMint && chainId === base.id && !isSwitching && SCORE_CONTRACT_ADDRESS && signature && address) {
       console.log("✅ Chain switched to Base, executing mint...", {
         chainId,
+        accountChainId,
+        chainIdFromHook,
         isSwitching,
         hasAddress: !!SCORE_CONTRACT_ADDRESS,
         hasSignature: !!signature,
         hasWallet: !!address,
       });
       setIsSwitchingChain(false);
-      // Small delay to ensure chain switch is fully processed
+      // Longer delay to ensure chain switch is fully processed by wallet
       setTimeout(() => {
-        executeMint();
-        setPendingMint(false);
-      }, 500);
+        // Double-check chainId one more time before executing
+        const currentChainId = accountChainId || chainIdFromHook;
+        if (currentChainId === base.id) {
+          console.log("✅ Final check passed, executing mint...");
+          executeMint();
+          setPendingMint(false);
+        } else {
+          console.error("❌ Chain check failed before mint:", {
+            currentChainId,
+            expected: base.id,
+          });
+          setMintError("Please switch to Base network in your wallet");
+          setPendingMint(false);
+        }
+      }, 1000); // Increased delay to 1 second
     }
-  }, [chainId, pendingMint, isSwitching, SCORE_CONTRACT_ADDRESS, signature, address, executeMint]);
+  }, [chainId, accountChainId, chainIdFromHook, pendingMint, isSwitching, SCORE_CONTRACT_ADDRESS, signature, address, executeMint]);
 
   // Handle transaction success
   useEffect(() => {
