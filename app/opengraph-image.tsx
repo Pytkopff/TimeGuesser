@@ -48,7 +48,7 @@ export default function OpenGraphImage() {
               fontSize: 24,
               fontWeight: 800,
               letterSpacing: 4,
-              display: "inline-block",
+              display: "block",
             }}
           >
             PLAY NOW

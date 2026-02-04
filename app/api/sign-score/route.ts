@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { keccak256, encodePacked, hashMessage, toBytes } from "viem";
+import { keccak256, encodePacked, hashMessage, toBytes, toHex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { sign } from "viem/accounts";
 
@@ -12,59 +12,197 @@ if (!VALIDATOR_PRIVATE_KEY) {
   );
 }
 
+// Helper function to safely serialize JSON (handles BigInt)
+function safeJsonResponse(data: any, status: number = 200): NextResponse {
+  const jsonString = JSON.stringify(data, (key, value) => {
+    if (typeof value === 'bigint') {
+      return value.toString();
+    }
+    // Handle nested objects that might contain BigInt
+    if (value && typeof value === 'object') {
+      const cleaned: any = {};
+      for (const k in value) {
+        const v = value[k];
+        cleaned[k] = typeof v === 'bigint' ? v.toString() : v;
+      }
+      return cleaned;
+    }
+    return value;
+  });
+  
+  return new NextResponse(jsonString, {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
 export async function POST(request: NextRequest) {
   try {
     if (!VALIDATOR_PRIVATE_KEY) {
-      return NextResponse.json(
+      console.error("❌ VALIDATOR_PRIVATE_KEY is missing");
+      return safeJsonResponse(
         { error: "Validator not configured. Missing VALIDATOR_PRIVATE_KEY." },
-        { status: 500 }
+        500
+      );
+    }
+
+    // Validate private key format
+    if (!VALIDATOR_PRIVATE_KEY.startsWith("0x") || VALIDATOR_PRIVATE_KEY.length !== 66) {
+      console.error("❌ Invalid VALIDATOR_PRIVATE_KEY format:", VALIDATOR_PRIVATE_KEY.substring(0, 10) + "...");
+      return safeJsonResponse(
+        { error: "Invalid VALIDATOR_PRIVATE_KEY format. Must be 0x-prefixed hex string (66 chars)." },
+        500
       );
     }
 
     const body = await request.json();
     const { gameId, score, player } = body ?? {};
 
-    if (!gameId || typeof score !== "number" || !player) {
-      return NextResponse.json(
-        { error: "Missing gameId, score, or player." },
-        { status: 400 }
+    // Safe logging - ensure all values are serializable
+    console.log("📝 Sign request:", {
+      gameId: String(gameId || ""),
+      score: Number(score) || 0,
+      player: String(player || ""),
+      scoreType: typeof score,
+    });
+
+    if (!gameId || typeof gameId !== "string") {
+      return safeJsonResponse(
+        { error: "Missing or invalid gameId (must be string)." },
+        400
+      );
+    }
+
+    if (typeof score !== "number" || isNaN(score) || score < 0 || score > 5000) {
+      return safeJsonResponse(
+        { error: `Invalid score: ${score}. Must be a number between 0 and 5000.` },
+        400
+      );
+    }
+
+    if (!player || typeof player !== "string" || !player.match(/^0x[a-fA-F0-9]{40}$/)) {
+      return safeJsonResponse(
+        { error: `Invalid player address: ${player}. Must be valid Ethereum address.` },
+        400
       );
     }
 
     // Create validator account from private key
-    const account = privateKeyToAccount(VALIDATOR_PRIVATE_KEY as `0x${string}`);
+    let validatorAddress: string;
+    try {
+      const account = privateKeyToAccount(VALIDATOR_PRIVATE_KEY as `0x${string}`);
+      // Immediately convert to string to avoid BigInt serialization issues
+      validatorAddress = String(account.address);
+      console.log("✅ Validator account created:", validatorAddress);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : "Unknown error";
+      console.error("❌ Failed to create account from private key:", errorMsg);
+      return safeJsonResponse(
+        { error: `Failed to create validator account: ${errorMsg}` },
+        500
+      );
+    }
 
     // Step 1: Create message hash exactly as contract does
     // Contract: keccak256(abi.encodePacked(gameId, score, msg.sender))
-    const messageHash = keccak256(
-      encodePacked(
-        ["string", "uint256", "address"],
-        [gameId, BigInt(score), player.toLowerCase() as `0x${string}`]
-      )
-    );
+    // IMPORTANT: Order must match contract exactly: gameId, score, player
+    let messageHash: string;
+    try {
+      const normalizedPlayer = player.toLowerCase() as `0x${string}`;
+      const hash = keccak256(
+        encodePacked(
+          ["string", "uint256", "address"],
+          [gameId, BigInt(Math.floor(score)), normalizedPlayer] // Order: gameId, score, player (matches contract)
+        )
+      );
+      // Ensure hash is a string
+      messageHash = String(hash);
+      console.log("✅ Message hash created:", messageHash);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : "Unknown error";
+      console.error("❌ Failed to create message hash:", errorMsg);
+      return safeJsonResponse(
+        { error: `Failed to create message hash: ${errorMsg}` },
+        500
+      );
+    }
 
     // Step 2: Add Ethereum message prefix (same as MessageHashUtils.toEthSignedMessageHash)
     // This adds "\x19Ethereum Signed Message:\n32" prefix
-    const ethSignedMessageHash = hashMessage({ raw: toBytes(messageHash) });
+    let ethSignedMessageHash: string;
+    try {
+      const hash = hashMessage({ raw: toBytes(messageHash as `0x${string}`) });
+      // Ensure hash is a string
+      ethSignedMessageHash = String(hash);
+      console.log("✅ Ethereum signed message hash created");
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : "Unknown error";
+      console.error("❌ Failed to create eth signed message hash:", errorMsg);
+      return safeJsonResponse(
+        { error: `Failed to create eth signed message hash: ${errorMsg}` },
+        500
+      );
+    }
 
     // Step 3: Sign the hash with private key
-    const signature = await sign({
-      hash: ethSignedMessageHash,
-      privateKey: VALIDATOR_PRIVATE_KEY as `0x${string}`,
-    });
-
-    return NextResponse.json({
-      signature,
-      validatorAddress: account.address,
-    });
+    let signatureStr: string;
+    try {
+      const signatureResult = await sign({
+        hash: ethSignedMessageHash as `0x${string}`,
+        privateKey: VALIDATOR_PRIVATE_KEY as `0x${string}`,
+      });
+      
+      // sign() from viem may return an object with BigInt fields (r, s, v)
+      // Extract just the signature string (0x...)
+      if (typeof signatureResult === 'string') {
+        // It's already a string - use it directly
+        signatureStr = signatureResult;
+      } else if (signatureResult && typeof signatureResult === 'object') {
+        // It's an object - extract the signature field (which is a string)
+        // Check if it has a 'signature' property
+        if ('signature' in signatureResult && typeof signatureResult.signature === 'string') {
+          signatureStr = signatureResult.signature;
+        } else {
+          // Fallback: try to serialize it (shouldn't happen, but safety check)
+          throw new Error('Unexpected signature format: object without signature field');
+        }
+      } else {
+        throw new Error('Unexpected signature format');
+      }
+      
+      // Final safety check: ensure it's a valid hex string
+      if (!signatureStr || !signatureStr.startsWith('0x') || signatureStr.length < 130) {
+        throw new Error(`Invalid signature format: ${signatureStr?.substring(0, 20)}...`);
+      }
+      
+      console.log("✅ Signature created:", signatureStr.substring(0, 20) + "...");
+      
+      // Return only plain strings - no BigInt, no complex objects
+      return safeJsonResponse({
+        signature: signatureStr,
+        validatorAddress: validatorAddress,
+      }, 200);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : "Unknown error";
+      console.error("❌ Failed to sign:", errorMsg);
+      return safeJsonResponse(
+        { error: `Failed to sign message: ${errorMsg}` },
+        500
+      );
+    }
   } catch (err) {
-    console.error("Error signing score:", err);
-    return NextResponse.json(
-      {
-        error:
-          err instanceof Error ? err.message : "Failed to generate signature",
-      },
-      { status: 500 }
+    // Safely extract error message without serializing BigInt
+    const errorMessage = err instanceof Error 
+      ? err.message 
+      : typeof err === 'string' 
+        ? err 
+        : "Failed to generate signature";
+    
+    console.error("❌ Unexpected error in sign-score:", errorMessage);
+    
+    return safeJsonResponse(
+      { error: errorMessage },
+      500
     );
   }
 }

@@ -29,25 +29,37 @@ export default function MintScore({ gameId, score, onMinted }: MintScoreProps) {
     if (!address) return null;
     setIsLoadingSignature(true);
     try {
+      const payload = {
+        gameId: String(gameId),
+        // Ensure we never send a BigInt in the JSON body
+        score: Number(score),
+        player: address.toLowerCase(),
+      };
+
       const res = await fetch("/api/sign-score", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          gameId,
-          score,
-          player: address.toLowerCase(),
-        }),
+        body: JSON.stringify(payload),
       });
 
+      const data = await res.json().catch(() => ({}));
+
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data?.error ?? "Failed to get signature");
+        throw new Error(
+          (data as any)?.error ?? "Failed to get signature"
+        );
       }
 
-      const { signature: sig } = await res.json();
-      return sig as `0x${string}`;
+      const sig = (data as any)?.signature as `0x${string}` | undefined;
+      if (!sig) {
+        throw new Error("No signature returned from server");
+      }
+
+      return sig;
     } catch (err) {
-      setMintError(err instanceof Error ? err.message : "Failed to get signature");
+      setMintError(
+        err instanceof Error ? err.message : "Failed to get signature"
+      );
       return null;
     } finally {
       setIsLoadingSignature(false);
