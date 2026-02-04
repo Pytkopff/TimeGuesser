@@ -330,10 +330,12 @@ export default function MintScore({ gameId, score, onMinted }: MintScoreProps) {
               <button
                 type="button"
                 onClick={handleMint}
-                disabled={isWriting || isConfirming || isSwitchingChain || !signature}
+                disabled={isWriting || isConfirming || isSwitchingChain || pendingMint || !signature || hash}
                 className="mt-3 w-full rounded-2xl border-2 border-zinc-900 bg-zinc-900 py-3 text-xs font-bold uppercase tracking-[0.2em] text-white disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isSwitchingChain
+                {hash
+                  ? "Transaction submitted..."
+                  : isSwitchingChain
                   ? "Switching to Base..."
                   : isWriting || isConfirming
                   ? isWriting
