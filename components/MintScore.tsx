@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useChainId, useSwitchChain } from "wagmi";
 import { base } from "wagmi/chains";
 import { ConnectWallet } from "@coinbase/onchainkit/wallet";
@@ -18,6 +18,7 @@ export default function MintScore({ gameId, score, onMinted }: MintScoreProps) {
   const [isLoadingSignature, setIsLoadingSignature] = useState(false);
   const [signature, setSignature] = useState<`0x${string}` | null>(null);
   const [isSwitchingChain, setIsSwitchingChain] = useState(false);
+  const [pendingMint, setPendingMint] = useState(false); // Flag to track if we're waiting to mint after chain switch
   
   // Check current chain and switch if needed
   const chainId = useChainId();
@@ -79,7 +80,38 @@ export default function MintScore({ gameId, score, onMinted }: MintScoreProps) {
     }
   };
 
-  // Handle successful transaction
+  // Actually execute the mint transaction
+  const executeMint = useCallback(() => {
+    if (!SCORE_CONTRACT_ADDRESS || !signature || !address) {
+      console.error("❌ Cannot execute mint: missing requirements");
+      return;
+    }
+
+    try {
+      console.log("🚀 Calling writeContract:", {
+        address: SCORE_CONTRACT_ADDRESS,
+        gameId,
+        score,
+        signatureLength: signature.length,
+        signature: signature.substring(0, 20) + "...",
+        chainId: base.id,
+      });
+
+      writeContract({
+        address: SCORE_CONTRACT_ADDRESS,
+        abi: SCORE_CONTRACT_ABI,
+        functionName: "mintScore",
+        args: [gameId, BigInt(score), signature],
+        chainId: base.id, // Force Base network
+      });
+    } catch (err) {
+      console.error("❌ Failed to write contract:", err);
+      setMintError(err instanceof Error ? err.message : "Failed to initiate transaction");
+      setPendingMint(false);
+    }
+  }, [SCORE_CONTRACT_ADDRESS, signature, address, gameId, score, writeContract]);
+
+  // Handle mint button click - check chain and switch if needed
   const handleMint = async () => {
     console.log("🔵 handleMint called", {
       hasAddress: !!SCORE_CONTRACT_ADDRESS,
@@ -98,47 +130,38 @@ export default function MintScore({ gameId, score, onMinted }: MintScoreProps) {
       return;
     }
 
-    // Check if we need to switch to Base network
-    if (chainId !== base.id) {
-      console.log("🔄 Switching to Base network...");
-      setIsSwitchingChain(true);
-      try {
-        await switchChain({ chainId: base.id });
-        // Wait a bit for the chain switch to complete
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        setIsSwitchingChain(false);
-      } catch (err) {
-        console.error("❌ Failed to switch chain:", err);
-        setIsSwitchingChain(false);
-        setMintError("Please switch to Base network in your wallet");
-        return;
-      }
+    // If already on Base, execute mint immediately
+    if (chainId === base.id) {
+      executeMint();
+      return;
     }
 
+    // Otherwise, switch chain first and set pending flag
+    console.log("🔄 Switching to Base network...");
+    setIsSwitchingChain(true);
+    setPendingMint(true);
+    setMintError(null);
+    
     try {
-      console.log("🚀 Calling writeContract:", {
-        address: SCORE_CONTRACT_ADDRESS,
-        gameId,
-        score,
-        signatureLength: signature.length,
-        signature: signature.substring(0, 20) + "...",
-        chainId: base.id,
-      });
-
-      const result = writeContract({
-        address: SCORE_CONTRACT_ADDRESS,
-        abi: SCORE_CONTRACT_ABI,
-        functionName: "mintScore",
-        args: [gameId, BigInt(score), signature],
-        chainId: base.id, // Force Base network
-      });
-
-      console.log("📝 writeContract returned:", result);
+      await switchChain({ chainId: base.id });
+      // Don't execute mint here - wait for chainId to change in useEffect
     } catch (err) {
-      console.error("❌ Failed to write contract:", err);
-      setMintError(err instanceof Error ? err.message : "Failed to initiate transaction");
+      console.error("❌ Failed to switch chain:", err);
+      setIsSwitchingChain(false);
+      setPendingMint(false);
+      setMintError("Please switch to Base network in your wallet");
     }
   };
+
+  // Auto-execute mint when chain switches to Base and we have pending mint
+  useEffect(() => {
+    if (pendingMint && chainId === base.id && !isSwitching && SCORE_CONTRACT_ADDRESS && signature && address) {
+      console.log("✅ Chain switched to Base, executing mint...");
+      setIsSwitchingChain(false);
+      executeMint();
+      setPendingMint(false);
+    }
+  }, [chainId, pendingMint, isSwitching, SCORE_CONTRACT_ADDRESS, signature, address, executeMint]);
 
   // Handle transaction success
   useEffect(() => {
