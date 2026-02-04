@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { base } from "wagmi/chains";
 import { ConnectWallet } from "@coinbase/onchainkit/wallet";
 import { SCORE_CONTRACT_ABI, SCORE_CONTRACT_ADDRESS } from "@/lib/scoreContract";
 
@@ -104,6 +105,7 @@ export default function MintScore({ gameId, score, onMinted }: MintScoreProps) {
         abi: SCORE_CONTRACT_ABI,
         functionName: "mintScore",
         args: [gameId, BigInt(score), signature],
+        chainId: base.id, // Force Base network
       });
 
       console.log("📝 writeContract returned:", result);
