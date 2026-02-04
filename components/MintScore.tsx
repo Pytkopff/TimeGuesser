@@ -52,9 +52,11 @@ export default function MintScore({ gameId, score, onMinted }: MintScoreProps) {
 
       const sig = (data as any)?.signature as `0x${string}` | undefined;
       if (!sig) {
+        console.error("❌ No signature in response:", data);
         throw new Error("No signature returned from server");
       }
 
+      console.log("✅ Signature received:", sig.substring(0, 20) + "...");
       return sig;
     } catch (err) {
       setMintError(
@@ -67,18 +69,40 @@ export default function MintScore({ gameId, score, onMinted }: MintScoreProps) {
   };
 
   const calls = useMemo(() => {
-    if (!SCORE_CONTRACT_ADDRESS || !signature) return [];
-    const data = encodeFunctionData({
-      abi: SCORE_CONTRACT_ABI,
-      functionName: "mintScore",
-      args: [gameId, BigInt(score), signature],
-    });
-    return [
-      {
+    if (!SCORE_CONTRACT_ADDRESS) {
+      console.error("❌ SCORE_CONTRACT_ADDRESS is missing");
+      return [];
+    }
+    if (!signature) {
+      console.log("⏳ Waiting for signature...");
+      return [];
+    }
+    
+    try {
+      const data = encodeFunctionData({
+        abi: SCORE_CONTRACT_ABI,
+        functionName: "mintScore",
+        args: [gameId, BigInt(score), signature],
+      });
+      
+      console.log("✅ Calls created:", {
         to: SCORE_CONTRACT_ADDRESS,
-        data,
-      },
-    ];
+        dataLength: data.length,
+        gameId,
+        score,
+        signatureLength: signature.length,
+      });
+      
+      return [
+        {
+          to: SCORE_CONTRACT_ADDRESS,
+          data,
+        },
+      ];
+    } catch (err) {
+      console.error("❌ Failed to encode function data:", err);
+      return [];
+    }
   }, [gameId, score, signature]);
 
   const handleSuccess = async (response: {
@@ -147,12 +171,15 @@ export default function MintScore({ gameId, score, onMinted }: MintScoreProps) {
             </button>
           )}
 
-          {signature && calls.length > 0 && (
+          {signature && calls.length > 0 ? (
             <Transaction
               chainId={base.id}
               calls={calls}
               onSuccess={handleSuccess}
-              onError={(e) => setMintError(e?.message ?? "Transaction failed.")}
+              onError={(e) => {
+                console.error("❌ Transaction error:", e);
+                setMintError(e?.message ?? "Transaction failed.");
+              }}
             >
               <div className="mt-3 flex flex-col gap-2">
                 <TransactionButton text="Mint score" />
@@ -161,7 +188,11 @@ export default function MintScore({ gameId, score, onMinted }: MintScoreProps) {
                 </TransactionStatus>
               </div>
             </Transaction>
-          )}
+          ) : signature && calls.length === 0 ? (
+            <div className="mt-3 text-xs text-red-600">
+              Failed to prepare transaction. Check console for details.
+            </div>
+          ) : null}
         </>
       )}
 
