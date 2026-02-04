@@ -31,6 +31,9 @@ export default function OpenGraphImage() {
             padding: "48px 64px",
             textAlign: "center",
             background: "#fff",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
           }}
         >
           <div style={{ fontSize: 64, fontWeight: 900, letterSpacing: 6 }}>
