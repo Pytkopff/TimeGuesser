@@ -75,25 +75,38 @@ export default function MintScore({ gameId, score, onMinted }: MintScoreProps) {
 
   // Handle successful transaction
   const handleMint = async () => {
+    console.log("🔵 handleMint called", {
+      hasAddress: !!SCORE_CONTRACT_ADDRESS,
+      hasSignature: !!signature,
+      hasWallet: !!address,
+    });
+
     if (!SCORE_CONTRACT_ADDRESS || !signature || !address) {
-      setMintError("Missing contract address, signature, or wallet address");
+      const missing = [];
+      if (!SCORE_CONTRACT_ADDRESS) missing.push("contract address");
+      if (!signature) missing.push("signature");
+      if (!address) missing.push("wallet address");
+      setMintError(`Missing: ${missing.join(", ")}`);
       return;
     }
 
     try {
-      console.log("🚀 Calling mintScore:", {
+      console.log("🚀 Calling writeContract:", {
         address: SCORE_CONTRACT_ADDRESS,
         gameId,
         score,
         signatureLength: signature.length,
+        signature: signature.substring(0, 20) + "...",
       });
 
-      writeContract({
+      const result = writeContract({
         address: SCORE_CONTRACT_ADDRESS,
         abi: SCORE_CONTRACT_ABI,
         functionName: "mintScore",
         args: [gameId, BigInt(score), signature],
       });
+
+      console.log("📝 writeContract returned:", result);
     } catch (err) {
       console.error("❌ Failed to write contract:", err);
       setMintError(err instanceof Error ? err.message : "Failed to initiate transaction");
@@ -135,9 +148,24 @@ export default function MintScore({ gameId, score, onMinted }: MintScoreProps) {
   useEffect(() => {
     if (writeError) {
       console.error("❌ Write contract error:", writeError);
+      console.error("❌ Error details:", {
+        name: writeError.name,
+        message: writeError.message,
+        cause: writeError.cause,
+        stack: writeError.stack,
+      });
       setMintError(writeError.message ?? "Transaction failed");
     }
   }, [writeError]);
+
+  // Debug: log when writeContract state changes
+  useEffect(() => {
+    console.log("📊 writeContract state:", {
+      hash,
+      isWriting,
+      writeError: writeError?.message,
+    });
+  }, [hash, isWriting, writeError]);
 
   if (!SCORE_CONTRACT_ADDRESS) {
     return (
