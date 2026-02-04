@@ -152,27 +152,68 @@ export async function POST(request: NextRequest) {
         privateKey: VALIDATOR_PRIVATE_KEY as `0x${string}`,
       });
       
-      // sign() from viem may return an object with BigInt fields (r, s, v)
-      // Extract just the signature string (0x...)
+      // sign() from viem returns an object with r, s, v (or yParity) fields
+      // We need to construct the signature string from these components
       if (typeof signatureResult === 'string') {
-        // It's already a string - use it directly
+        // It's already a string - use it directly (shouldn't happen in viem 2.45.1, but safety check)
         signatureStr = signatureResult;
       } else if (signatureResult && typeof signatureResult === 'object') {
-        // It's an object - extract the signature field (which is a string)
-        // Check if it has a 'signature' property
-        if ('signature' in signatureResult && typeof signatureResult.signature === 'string') {
-          signatureStr = signatureResult.signature;
+        // Extract r, s, v from the signature object
+        const sig = signatureResult as any;
+        
+        // Check if it has r, s, v fields
+        if (sig.r && sig.s && (sig.v !== undefined || sig.yParity !== undefined)) {
+          // Convert r, s to hex strings (remove 0x prefix, pad to 64 chars)
+          const r = typeof sig.r === 'bigint' 
+            ? sig.r.toString(16).padStart(64, '0')
+            : typeof sig.r === 'string'
+              ? sig.r.replace('0x', '').padStart(64, '0')
+              : String(sig.r).replace('0x', '').padStart(64, '0');
+          
+          const s = typeof sig.s === 'bigint'
+            ? sig.s.toString(16).padStart(64, '0')
+            : typeof sig.s === 'string'
+              ? sig.s.replace('0x', '').padStart(64, '0')
+              : String(sig.s).replace('0x', '').padStart(64, '0');
+          
+          // v is either 0/1 (yParity) or 27/28 (legacy)
+          // For ECDSA.recover in Solidity, we need v as 27 or 28
+          let v: string;
+          if (sig.v !== undefined) {
+            // v is already set (27 or 28)
+            v = typeof sig.v === 'bigint' 
+              ? sig.v.toString(16)
+              : String(sig.v);
+          } else if (sig.yParity !== undefined) {
+            // yParity is 0 or 1, convert to v (27 or 28)
+            const yParity = typeof sig.yParity === 'bigint' 
+              ? Number(sig.yParity)
+              : Number(sig.yParity);
+            v = (27 + yParity).toString(16);
+          } else {
+            throw new Error('Signature object missing both v and yParity');
+          }
+          
+          // Construct signature: 0x + r (64 chars) + s (64 chars) + v (2 chars)
+          signatureStr = `0x${r}${s}${v.padStart(2, '0')}`;
         } else {
-          // Fallback: try to serialize it (shouldn't happen, but safety check)
-          throw new Error('Unexpected signature format: object without signature field');
+          // Log the actual structure for debugging
+          console.error("❌ Unexpected signature structure:", {
+            keys: Object.keys(sig),
+            r: sig.r,
+            s: sig.s,
+            v: sig.v,
+            yParity: sig.yParity,
+          });
+          throw new Error(`Unexpected signature format: missing r, s, or v. Keys: ${Object.keys(sig).join(', ')}`);
         }
       } else {
-        throw new Error('Unexpected signature format');
+        throw new Error(`Unexpected signature format: ${typeof signatureResult}`);
       }
       
-      // Final safety check: ensure it's a valid hex string
-      if (!signatureStr || !signatureStr.startsWith('0x') || signatureStr.length < 130) {
-        throw new Error(`Invalid signature format: ${signatureStr?.substring(0, 20)}...`);
+      // Final safety check: ensure it's a valid hex string (130 chars: 0x + 64 + 64 + 2)
+      if (!signatureStr || !signatureStr.startsWith('0x') || signatureStr.length !== 132) {
+        throw new Error(`Invalid signature format: length=${signatureStr?.length}, expected 132. Value: ${signatureStr?.substring(0, 20)}...`);
       }
       
       console.log("✅ Signature created:", signatureStr.substring(0, 20) + "...");
