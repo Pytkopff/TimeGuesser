@@ -1,14 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useAccount } from "wagmi";
-import { encodeFunctionData } from "viem";
-import { base } from "wagmi/chains";
-import {
-  Transaction,
-  TransactionButton,
-  TransactionStatus,
-} from "@coinbase/onchainkit/transaction";
+import { useEffect, useState } from "react";
+import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { ConnectWallet } from "@coinbase/onchainkit/wallet";
 import { SCORE_CONTRACT_ABI, SCORE_CONTRACT_ADDRESS } from "@/lib/scoreContract";
 
@@ -23,6 +16,18 @@ export default function MintScore({ gameId, score, onMinted }: MintScoreProps) {
   const [mintError, setMintError] = useState<string | null>(null);
   const [isLoadingSignature, setIsLoadingSignature] = useState(false);
   const [signature, setSignature] = useState<`0x${string}` | null>(null);
+  
+  // Use wagmi's useWriteContract for direct contract interaction
+  const { 
+    writeContract, 
+    data: hash, 
+    isPending: isWriting,
+    error: writeError 
+  } = useWriteContract();
+  
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
+    hash,
+  });
 
   // Fetch signature from backend before minting
   const fetchSignature = async () => {
@@ -68,69 +73,71 @@ export default function MintScore({ gameId, score, onMinted }: MintScoreProps) {
     }
   };
 
-  const calls = useMemo(() => {
-    if (!SCORE_CONTRACT_ADDRESS) {
-      console.error("❌ SCORE_CONTRACT_ADDRESS is missing");
-      return [];
+  // Handle successful transaction
+  const handleMint = async () => {
+    if (!SCORE_CONTRACT_ADDRESS || !signature || !address) {
+      setMintError("Missing contract address, signature, or wallet address");
+      return;
     }
-    if (!signature) {
-      console.log("⏳ Waiting for signature...");
-      return [];
-    }
-    
+
     try {
-      const data = encodeFunctionData({
-        abi: SCORE_CONTRACT_ABI,
-        functionName: "mintScore",
-        args: [gameId, BigInt(score), signature],
-      });
-      
-      console.log("✅ Calls created:", {
-        to: SCORE_CONTRACT_ADDRESS,
-        dataLength: data.length,
+      console.log("🚀 Calling mintScore:", {
+        address: SCORE_CONTRACT_ADDRESS,
         gameId,
         score,
         signatureLength: signature.length,
       });
-      
-      return [
-        {
-          to: SCORE_CONTRACT_ADDRESS,
-          data,
-        },
-      ];
+
+      writeContract({
+        address: SCORE_CONTRACT_ADDRESS,
+        abi: SCORE_CONTRACT_ABI,
+        functionName: "mintScore",
+        args: [gameId, BigInt(score), signature],
+      });
     } catch (err) {
-      console.error("❌ Failed to encode function data:", err);
-      return [];
+      console.error("❌ Failed to write contract:", err);
+      setMintError(err instanceof Error ? err.message : "Failed to initiate transaction");
     }
-  }, [gameId, score, signature]);
-
-  const handleSuccess = async (response: {
-    transactionReceipts: { transactionHash: string }[];
-  }) => {
-    setMintError(null);
-    const receipt = response.transactionReceipts?.[0];
-    if (!receipt?.transactionHash || !address) return;
-
-    const res = await fetch("/api/score", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        gameId,
-        score,
-        txHash: receipt.transactionHash,
-        wallet: address,
-      }),
-    });
-
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      setMintError(data?.error ?? "Score verification failed.");
-      return;
-    }
-
-    onMinted?.(receipt.transactionHash);
   };
+
+  // Handle transaction success
+  useEffect(() => {
+    if (isConfirmed && hash && address) {
+      console.log("✅ Transaction confirmed:", hash);
+      
+      // Call backend to verify and save score
+      fetch("/api/score", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          gameId,
+          score,
+          txHash: hash,
+          wallet: address,
+        }),
+      })
+        .then((res) => {
+          if (!res.ok) {
+            return res.json().then((data) => {
+              throw new Error(data?.error ?? "Score verification failed.");
+            });
+          }
+          onMinted?.(hash);
+        })
+        .catch((err) => {
+          console.error("❌ Failed to verify score:", err);
+          setMintError(err.message);
+        });
+    }
+  }, [isConfirmed, hash, address, gameId, score, onMinted]);
+
+  // Handle write errors
+  useEffect(() => {
+    if (writeError) {
+      console.error("❌ Write contract error:", writeError);
+      setMintError(writeError.message ?? "Transaction failed");
+    }
+  }, [writeError]);
 
   if (!SCORE_CONTRACT_ADDRESS) {
     return (
@@ -171,28 +178,28 @@ export default function MintScore({ gameId, score, onMinted }: MintScoreProps) {
             </button>
           )}
 
-          {signature && calls.length > 0 ? (
-            <Transaction
-              chainId={base.id}
-              calls={calls}
-              onSuccess={handleSuccess}
-              onError={(e) => {
-                console.error("❌ Transaction error:", e);
-                setMintError(e?.message ?? "Transaction failed.");
-              }}
-            >
-              <div className="mt-3 flex flex-col gap-2">
-                <TransactionButton text="Mint score" />
-                <TransactionStatus>
-                  <div className="text-xs text-zinc-600">Transaction status will appear here</div>
-                </TransactionStatus>
-              </div>
-            </Transaction>
-          ) : signature && calls.length === 0 ? (
-            <div className="mt-3 text-xs text-red-600">
-              Failed to prepare transaction. Check console for details.
-            </div>
-          ) : null}
+          {signature && (
+            <>
+              <button
+                type="button"
+                onClick={handleMint}
+                disabled={isWriting || isConfirming || !signature}
+                className="mt-3 w-full rounded-2xl border-2 border-zinc-900 bg-zinc-900 py-3 text-xs font-bold uppercase tracking-[0.2em] text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isWriting || isConfirming
+                  ? isWriting
+                    ? "Confirming in wallet..."
+                    : "Waiting for confirmation..."
+                  : "Mint score"}
+              </button>
+              
+              {isConfirmed && hash && (
+                <div className="mt-2 text-xs font-semibold text-emerald-700">
+                  ✅ Transaction confirmed! Score saved.
+                </div>
+              )}
+            </>
+          )}
         </>
       )}
 
