@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useChainId, useSwitchChain } from "wagmi";
 import { base } from "wagmi/chains";
 import { ConnectWallet } from "@coinbase/onchainkit/wallet";
 import { SCORE_CONTRACT_ABI, SCORE_CONTRACT_ADDRESS } from "@/lib/scoreContract";
@@ -17,6 +17,11 @@ export default function MintScore({ gameId, score, onMinted }: MintScoreProps) {
   const [mintError, setMintError] = useState<string | null>(null);
   const [isLoadingSignature, setIsLoadingSignature] = useState(false);
   const [signature, setSignature] = useState<`0x${string}` | null>(null);
+  const [isSwitchingChain, setIsSwitchingChain] = useState(false);
+  
+  // Check current chain and switch if needed
+  const chainId = useChainId();
+  const { switchChain, isPending: isSwitching } = useSwitchChain();
   
   // Use wagmi's useWriteContract for direct contract interaction
   const { 
@@ -80,6 +85,8 @@ export default function MintScore({ gameId, score, onMinted }: MintScoreProps) {
       hasAddress: !!SCORE_CONTRACT_ADDRESS,
       hasSignature: !!signature,
       hasWallet: !!address,
+      currentChainId: chainId,
+      targetChainId: base.id,
     });
 
     if (!SCORE_CONTRACT_ADDRESS || !signature || !address) {
@@ -91,6 +98,23 @@ export default function MintScore({ gameId, score, onMinted }: MintScoreProps) {
       return;
     }
 
+    // Check if we need to switch to Base network
+    if (chainId !== base.id) {
+      console.log("🔄 Switching to Base network...");
+      setIsSwitchingChain(true);
+      try {
+        await switchChain({ chainId: base.id });
+        // Wait a bit for the chain switch to complete
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        setIsSwitchingChain(false);
+      } catch (err) {
+        console.error("❌ Failed to switch chain:", err);
+        setIsSwitchingChain(false);
+        setMintError("Please switch to Base network in your wallet");
+        return;
+      }
+    }
+
     try {
       console.log("🚀 Calling writeContract:", {
         address: SCORE_CONTRACT_ADDRESS,
@@ -98,6 +122,7 @@ export default function MintScore({ gameId, score, onMinted }: MintScoreProps) {
         score,
         signatureLength: signature.length,
         signature: signature.substring(0, 20) + "...",
+        chainId: base.id,
       });
 
       const result = writeContract({
@@ -213,10 +238,12 @@ export default function MintScore({ gameId, score, onMinted }: MintScoreProps) {
               <button
                 type="button"
                 onClick={handleMint}
-                disabled={isWriting || isConfirming || !signature}
+                disabled={isWriting || isConfirming || isSwitchingChain || !signature}
                 className="mt-3 w-full rounded-2xl border-2 border-zinc-900 bg-zinc-900 py-3 text-xs font-bold uppercase tracking-[0.2em] text-white disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isWriting || isConfirming
+                {isSwitchingChain
+                  ? "Switching to Base..."
+                  : isWriting || isConfirming
                   ? isWriting
                     ? "Confirming in wallet..."
                     : "Waiting for confirmation..."
