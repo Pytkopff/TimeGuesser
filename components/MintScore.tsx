@@ -84,6 +84,18 @@ export default function MintScore({ gameId, score, onMinted }: MintScoreProps) {
   const executeMint = useCallback(() => {
     if (!SCORE_CONTRACT_ADDRESS || !signature || !address) {
       console.error("❌ Cannot execute mint: missing requirements");
+      setPendingMint(false);
+      return;
+    }
+
+    // Double-check that we're on Base before executing
+    if (chainId !== base.id) {
+      console.error("❌ Cannot execute mint: still not on Base network", {
+        currentChainId: chainId,
+        expectedChainId: base.id,
+      });
+      setPendingMint(false);
+      setMintError("Please switch to Base network in your wallet");
       return;
     }
 
@@ -94,22 +106,22 @@ export default function MintScore({ gameId, score, onMinted }: MintScoreProps) {
         score,
         signatureLength: signature.length,
         signature: signature.substring(0, 20) + "...",
-        chainId: base.id,
+        currentChainId: chainId,
       });
 
+      // Don't pass chainId - let wagmi use the current chain from the wallet
       writeContract({
         address: SCORE_CONTRACT_ADDRESS,
         abi: SCORE_CONTRACT_ABI,
         functionName: "mintScore",
         args: [gameId, BigInt(score), signature],
-        chainId: base.id, // Force Base network
       });
     } catch (err) {
       console.error("❌ Failed to write contract:", err);
       setMintError(err instanceof Error ? err.message : "Failed to initiate transaction");
       setPendingMint(false);
     }
-  }, [SCORE_CONTRACT_ADDRESS, signature, address, gameId, score, writeContract]);
+  }, [SCORE_CONTRACT_ADDRESS, signature, address, gameId, score, writeContract, chainId]);
 
   // Handle mint button click - check chain and switch if needed
   const handleMint = async () => {
@@ -156,10 +168,19 @@ export default function MintScore({ gameId, score, onMinted }: MintScoreProps) {
   // Auto-execute mint when chain switches to Base and we have pending mint
   useEffect(() => {
     if (pendingMint && chainId === base.id && !isSwitching && SCORE_CONTRACT_ADDRESS && signature && address) {
-      console.log("✅ Chain switched to Base, executing mint...");
+      console.log("✅ Chain switched to Base, executing mint...", {
+        chainId,
+        isSwitching,
+        hasAddress: !!SCORE_CONTRACT_ADDRESS,
+        hasSignature: !!signature,
+        hasWallet: !!address,
+      });
       setIsSwitchingChain(false);
-      executeMint();
-      setPendingMint(false);
+      // Small delay to ensure chain switch is fully processed
+      setTimeout(() => {
+        executeMint();
+        setPendingMint(false);
+      }, 500);
     }
   }, [chainId, pendingMint, isSwitching, SCORE_CONTRACT_ADDRESS, signature, address, executeMint]);
 
