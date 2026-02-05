@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createConfig, http } from "wagmi";
 import { base } from "wagmi/chains";
 import { injected, coinbaseWallet } from "wagmi/connectors";
+import { FarcasterProvider } from "@/lib/farcaster";
 
 type ProvidersProps = {
   children: React.ReactNode;
@@ -28,15 +29,17 @@ const queryClient = new QueryClient();
 
 export default function Providers({ children }: ProvidersProps) {
   return (
-    <WagmiProvider config={config}>
-      <QueryClientProvider client={queryClient}>
-        <OnchainKitProvider
-          chain={base}
-          rpcUrl={process.env.NEXT_PUBLIC_BASE_RPC_URL}
-        >
-          {children}
-        </OnchainKitProvider>
-      </QueryClientProvider>
-    </WagmiProvider>
+    <FarcasterProvider>
+      <WagmiProvider config={config}>
+        <QueryClientProvider client={queryClient}>
+          <OnchainKitProvider
+            chain={base}
+            rpcUrl={process.env.NEXT_PUBLIC_BASE_RPC_URL}
+          >
+            {children}
+          </OnchainKitProvider>
+        </QueryClientProvider>
+      </WagmiProvider>
+    </FarcasterProvider>
   );
 }

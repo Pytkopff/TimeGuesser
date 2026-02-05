@@ -5,6 +5,8 @@ import { getSupabaseClient } from "@/lib/supabaseClient";
 import MintScore from "@/components/MintScore";
 import Leaderboard from "@/components/Leaderboard";
 import ShareButton from "@/components/ShareButton";
+import UserProfile from "@/components/UserProfile";
+import { useFarcaster } from "@/lib/farcaster";
 
 type Photo = {
   id: string;
@@ -29,6 +31,9 @@ export default function Home() {
   const [gameId, setGameId] = useState(() => crypto.randomUUID());
   const [hasMinted, setHasMinted] = useState(false);
   
+  // Farcaster integration
+  const { isLoaded: farcasterLoaded, isInFrame, user: farcasterUser, ready } = useFarcaster();
+  
   // Collect round data for leaderboard
   type RoundData = {
     photoId: string;
@@ -39,6 +44,13 @@ export default function Home() {
   };
   const [roundsData, setRoundsData] = useState<RoundData[]>([]);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
+  
+  // Send ready signal to Farcaster when app is loaded
+  useEffect(() => {
+    if (farcasterLoaded && photos.length > 0) {
+      ready();
+    }
+  }, [farcasterLoaded, photos.length, ready]);
 
   const minYear = 1900;
   const maxYear = useMemo(() => new Date().getFullYear(), []);
@@ -181,9 +193,11 @@ export default function Home() {
             <div className="rounded-full border-2 border-zinc-900 px-3 py-1 text-[10px] font-black uppercase tracking-[0.3em] sm:text-xs">
               TimeGuesser
             </div>
-            <div className="hidden text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500 sm:block">
-              Chrono Edition
-            </div>
+            {isInFrame && (
+              <div className="hidden text-[10px] font-semibold uppercase tracking-[0.15em] text-purple-600 sm:block">
+                🟣 Mini App
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-600 sm:gap-3 sm:text-xs">
             <button
@@ -194,11 +208,12 @@ export default function Home() {
               🏆
             </button>
             <span className="rounded-full border border-zinc-900 px-2 py-1 sm:px-3">
-              Round {round}/{maxRounds}
+              R{round}/{maxRounds}
             </span>
             <span className="rounded-full border border-zinc-300 bg-white px-2 py-1 sm:px-3">
-              Score: {totalScore} pts
+              {totalScore}pts
             </span>
+            <UserProfile />
           </div>
         </header>
 
@@ -321,6 +336,7 @@ export default function Home() {
                         gameId={gameId}
                         score={totalScore}
                         rounds={roundsData}
+                        farcasterUser={farcasterUser}
                         onMinted={() => setHasMinted(true)}
                       />
                     ) : (

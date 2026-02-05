@@ -1,18 +1,18 @@
 {
   "accountAssociation": {
-    "header": "",
-    "payload": "",
-    "signature": ""
+    "header": "eyJmaWQiOjAsInR5cGUiOiJjdXN0b2R5Iiwia2V5IjoiMHgwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwIn0",
+    "payload": "eyJkb21haW4iOiJ0aW1lLWd1ZXNzZXItdGhyZWUudmVyY2VsLmFwcCJ9",
+    "signature": "MHgwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAw"
   },
   "frame": {
-    "version": "next",
+    "version": "1",
     "name": "TimeGuesser",
+    "iconUrl": "https://time-guesser-three.vercel.app/icon.png",
     "homeUrl": "https://time-guesser-three.vercel.app",
-    "iconUrl": "https://time-guesser-three.vercel.app/miniapp-icon",
-    "imageUrl": "https://time-guesser-three.vercel.app/miniapp-image",
+    "imageUrl": "https://time-guesser-three.vercel.app/api/frame/image",
     "buttonTitle": "Play TimeGuesser",
-    "splashImageUrl": "https://time-guesser-three.vercel.app/miniapp-icon",
-    "splashBackgroundColor": "#f5f3ee",
-    "canonicalDomain": "time-guesser-three.vercel.app"
+    "splashImageUrl": "https://time-guesser-three.vercel.app/splash.png",
+    "splashBackgroundColor": "#1a1a2e",
+    "webhookUrl": "https://time-guesser-three.vercel.app/api/frame/webhook"
   }
 }

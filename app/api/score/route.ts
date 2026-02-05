@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     console.log("✅ Supabase admin created");
 
     const body = await request.json();
-    const { gameId, score, txHash, wallet, rounds } = body ?? {};
+    const { gameId, score, txHash, wallet, rounds, farcaster } = body ?? {};
 
     if (!gameId || !txHash || typeof score !== "number" || !wallet) {
       return NextResponse.json(
@@ -70,6 +70,14 @@ export async function POST(request: NextRequest) {
 
     // Validate rounds data if provided
     const validRounds = Array.isArray(rounds) ? rounds : [];
+    
+    // Extract Farcaster data if provided
+    const farcasterData = farcaster ? {
+      fid: farcaster.fid,
+      username: farcaster.username,
+      displayName: farcaster.displayName,
+      pfpUrl: farcaster.pfpUrl,
+    } : null;
 
     if (!isAddress(wallet)) {
       return NextResponse.json({ error: "Invalid wallet address." }, { status: 400 });
@@ -103,13 +111,19 @@ export async function POST(request: NextRequest) {
     }
 
     // TypeScript doesn't know about our Supabase table types, so we use 'as any'
-    await (admin.from("users") as any).upsert(
-      {
-        canonical_user_id: wallet.toLowerCase(),
-        wallet: wallet.toLowerCase(),
-      },
-      { onConflict: "canonical_user_id" }
-    );
+    // Include Farcaster profile data if available
+    const userData: any = {
+      canonical_user_id: wallet.toLowerCase(),
+      wallet: wallet.toLowerCase(),
+    };
+    
+    if (farcasterData) {
+      userData.farcaster_fid = farcasterData.fid;
+      userData.display_name = farcasterData.displayName || farcasterData.username;
+      userData.avatar_url = farcasterData.pfpUrl;
+    }
+    
+    await (admin.from("users") as any).upsert(userData, { onConflict: "canonical_user_id" });
 
     const { error: gameError } = await (admin.from("games") as any).insert({
       id: gameId,

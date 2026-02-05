@@ -14,14 +14,22 @@ type RoundData = {
   score: number;
 };
 
+type FarcasterUser = {
+  fid: number;
+  username?: string;
+  displayName?: string;
+  pfpUrl?: string;
+};
+
 type MintScoreProps = {
   gameId: string;
   score: number;
   rounds?: RoundData[];
+  farcasterUser?: FarcasterUser | null;
   onMinted?: (txHash: string) => void;
 };
 
-export default function MintScore({ gameId, score, rounds = [], onMinted }: MintScoreProps) {
+export default function MintScore({ gameId, score, rounds = [], farcasterUser, onMinted }: MintScoreProps) {
   const { address, chainId: accountChainId } = useAccount();
   const [mintError, setMintError] = useState<string | null>(null);
   const [isLoadingSignature, setIsLoadingSignature] = useState(false);
@@ -256,6 +264,13 @@ export default function MintScore({ gameId, score, rounds = [], onMinted }: Mint
           txHash: hash,
           wallet: address,
           rounds, // Include round data for leaderboard
+          // Include Farcaster data for profile display
+          farcaster: farcasterUser ? {
+            fid: farcasterUser.fid,
+            username: farcasterUser.username,
+            displayName: farcasterUser.displayName,
+            pfpUrl: farcasterUser.pfpUrl,
+          } : null,
         }),
       })
         .then((res) => {
