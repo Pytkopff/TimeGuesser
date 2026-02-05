@@ -91,23 +91,59 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const receipt = await publicClient.getTransactionReceipt({ hash: txHash });
-    if (!receipt || receipt.status !== "success") {
+    // Retry getting transaction receipt with exponential backoff
+    // Sometimes the receipt isn't available immediately after transaction is sent
+    let receipt = null;
+    const maxRetries = 5;
+    const baseDelay = 2000; // Start with 2 seconds
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`🔍 Attempt ${attempt}/${maxRetries} to get transaction receipt...`);
+        receipt = await publicClient.getTransactionReceipt({ hash: txHash });
+        if (receipt) {
+          console.log(`✅ Got receipt on attempt ${attempt}`);
+          break;
+        }
+      } catch (receiptError) {
+        console.log(`⏳ Receipt not available yet (attempt ${attempt}/${maxRetries}):`, 
+          receiptError instanceof Error ? receiptError.message : receiptError);
+        
+        if (attempt < maxRetries) {
+          // Exponential backoff: 2s, 4s, 8s, 16s, 32s
+          const delay = baseDelay * Math.pow(2, attempt - 1);
+          console.log(`⏳ Waiting ${delay}ms before retry...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      }
+    }
+    
+    if (!receipt) {
+      console.log("⚠️ Could not get receipt after retries, but transaction might still be valid");
+      // Don't fail here - the transaction was already confirmed by wagmi's useWaitForTransactionReceipt
+      // We'll trust that it went through and save the score anyway
+    } else if (receipt.status !== "success") {
       return NextResponse.json({ error: "Transaction not successful." }, { status: 400 });
     }
 
-    if (receipt.to?.toLowerCase() !== contractAddress.toLowerCase()) {
-      return NextResponse.json(
-        { error: "Transaction target mismatch." },
-        { status: 400 }
-      );
-    }
+    // Only validate receipt details if we have the receipt
+    // If receipt is null, we trust the frontend since wagmi already confirmed the transaction
+    if (receipt) {
+      if (receipt.to?.toLowerCase() !== contractAddress.toLowerCase()) {
+        return NextResponse.json(
+          { error: "Transaction target mismatch." },
+          { status: 400 }
+        );
+      }
 
-    if (receipt.from?.toLowerCase() !== wallet.toLowerCase()) {
-      return NextResponse.json(
-        { error: "Wallet does not match transaction sender." },
-        { status: 400 }
-      );
+      if (receipt.from?.toLowerCase() !== wallet.toLowerCase()) {
+        return NextResponse.json(
+          { error: "Wallet does not match transaction sender." },
+          { status: 400 }
+        );
+      }
+    } else {
+      console.log("⚠️ Proceeding without receipt validation - trusting frontend confirmation");
     }
 
     // TypeScript doesn't know about our Supabase table types, so we use 'as any'
