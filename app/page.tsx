@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import MintScore from "@/components/MintScore";
 import Leaderboard from "@/components/Leaderboard";
+import ShareButton from "@/components/ShareButton";
 
 type Photo = {
   id: string;
@@ -323,9 +324,12 @@ export default function Home() {
                         onMinted={() => setHasMinted(true)}
                       />
                     ) : (
-                      <div className="mt-3 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">
-                        Onchain verified. Leaderboard unlocked.
-                      </div>
+                      <>
+                        <div className="mt-3 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">
+                          Onchain verified. Leaderboard unlocked.
+                        </div>
+                        <ShareButton score={totalScore} />
+                      </>
                     )}
                     <button
                       type="button"
