@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import sdk, { type FrameContext } from "@farcaster/frame-sdk";
+import sdk from "@farcaster/frame-sdk";
 
 type FarcasterUser = {
   fid: number;
@@ -12,10 +12,25 @@ type FarcasterUser = {
   verifications?: string[];
 };
 
+// Define our own context type based on Farcaster SDK structure
+type FrameContextData = {
+  user?: {
+    fid: number;
+    username?: string;
+    displayName?: string;
+    pfpUrl?: string;
+  };
+  client?: {
+    clientFid?: number;
+    added?: boolean;
+  };
+  location?: unknown;
+};
+
 type FarcasterContextType = {
   isLoaded: boolean;
   isInFrame: boolean;
-  context: FrameContext | null;
+  context: FrameContextData | null;
   user: FarcasterUser | null;
   ready: () => Promise<void>;
 };
@@ -31,7 +46,7 @@ const FarcasterContext = createContext<FarcasterContextType>({
 export function FarcasterProvider({ children }: { children: ReactNode }) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isInFrame, setIsInFrame] = useState(false);
-  const [context, setContext] = useState<FrameContext | null>(null);
+  const [context, setContext] = useState<FrameContextData | null>(null);
   const [user, setUser] = useState<FarcasterUser | null>(null);
 
   useEffect(() => {
