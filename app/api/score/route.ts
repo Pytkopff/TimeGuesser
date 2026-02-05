@@ -1,19 +1,42 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createPublicClient, http, isAddress } from "viem";
 import { base } from "viem/chains";
-import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
-import { SCORE_CONTRACT_ADDRESS } from "@/lib/scoreContract";
+import { createClient } from "@supabase/supabase-js";
 
-const rpcUrl = process.env.BASE_RPC_URL ?? "https://mainnet.base.org";
+// Force dynamic rendering - don't try to pre-render this route
+export const dynamic = "force-dynamic";
 
-const publicClient = createPublicClient({
-  chain: base,
-  transport: http(rpcUrl),
-});
+// Lazy-create public client to avoid build-time errors
+function getPublicClient() {
+  const rpcUrl = process.env.BASE_RPC_URL ?? "https://mainnet.base.org";
+  return createPublicClient({
+    chain: base,
+    transport: http(rpcUrl),
+  });
+}
+
+// Lazy-create Supabase admin client
+function getSupabaseAdmin() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  if (!supabaseUrl || !serviceRoleKey) {
+    return null;
+  }
+  
+  return createClient(supabaseUrl, serviceRoleKey, {
+    auth: { persistSession: false },
+  });
+}
+
+function getContractAddress() {
+  return process.env.NEXT_PUBLIC_SCORE_CONTRACT_ADDRESS as `0x${string}` | undefined;
+}
 
 export async function POST(request: NextRequest) {
   try {
     const admin = getSupabaseAdmin();
+    const publicClient = getPublicClient();
     
     if (!admin) {
       return NextResponse.json(
@@ -39,7 +62,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid wallet address." }, { status: 400 });
     }
 
-    if (!SCORE_CONTRACT_ADDRESS) {
+    const contractAddress = getContractAddress();
+    if (!contractAddress) {
       return NextResponse.json(
         { error: "Missing SCORE_CONTRACT_ADDRESS on server." },
         { status: 500 }
@@ -51,7 +75,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Transaction not successful." }, { status: 400 });
     }
 
-    if (receipt.to?.toLowerCase() !== SCORE_CONTRACT_ADDRESS.toLowerCase()) {
+    if (receipt.to?.toLowerCase() !== contractAddress.toLowerCase()) {
       return NextResponse.json(
         { error: "Transaction target mismatch." },
         { status: 400 }

@@ -3,13 +3,12 @@ import { keccak256, encodePacked, hashMessage, toBytes, toHex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { sign } from "viem/accounts";
 
-// Get validator private key from environment
-const VALIDATOR_PRIVATE_KEY = process.env.VALIDATOR_PRIVATE_KEY;
+// Force dynamic rendering - don't try to pre-render this route
+export const dynamic = "force-dynamic";
 
-if (!VALIDATOR_PRIVATE_KEY) {
-  console.warn(
-    "⚠️ VALIDATOR_PRIVATE_KEY not set. Score signing will fail."
-  );
+// Get validator private key lazily to avoid build-time issues
+function getValidatorPrivateKey() {
+  return process.env.VALIDATOR_PRIVATE_KEY;
 }
 
 // Helper function to safely serialize JSON (handles BigInt)
@@ -38,6 +37,8 @@ function safeJsonResponse(data: any, status: number = 200): NextResponse {
 
 export async function POST(request: NextRequest) {
   try {
+    const VALIDATOR_PRIVATE_KEY = getValidatorPrivateKey();
+    
     if (!VALIDATOR_PRIVATE_KEY) {
       console.error("❌ VALIDATOR_PRIVATE_KEY is missing");
       return safeJsonResponse(
