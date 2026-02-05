@@ -64,14 +64,22 @@ export function FarcasterProvider({ children }: { children: ReactNode }) {
           
           // Extract user data from context
           if (ctx.user) {
+            // Handle different SDK versions - pfpUrl can be string or pfp can be object
+            const ctxUser = ctx.user as any;
+            let avatarUrl = ctxUser.pfpUrl;
+            if (!avatarUrl && ctxUser.pfp) {
+              avatarUrl = typeof ctxUser.pfp === 'string' ? ctxUser.pfp : ctxUser.pfp?.url;
+            }
+            
             const farcasterUser: FarcasterUser = {
               fid: ctx.user.fid,
               username: ctx.user.username,
               displayName: ctx.user.displayName,
-              pfpUrl: ctx.user.pfpUrl,
+              pfpUrl: avatarUrl,
             };
             setUser(farcasterUser);
             console.log("✅ Farcaster user:", farcasterUser);
+            console.log("✅ Avatar URL:", avatarUrl);
           }
         } else {
           console.log("ℹ️ Not in Farcaster frame, running standalone");

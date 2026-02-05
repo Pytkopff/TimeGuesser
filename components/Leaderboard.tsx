@@ -119,7 +119,7 @@ export default function Leaderboard({ onClose }: LeaderboardProps) {
                   className="flex items-center gap-3 rounded-xl border border-zinc-300 bg-white p-3"
                 >
                   <div
-                    className={`flex h-8 w-8 items-center justify-center rounded-full border-2 text-xs font-black ${
+                    className={`relative flex h-8 w-8 items-center justify-center rounded-full border-2 text-xs font-black ${
                       index === 0
                         ? "border-yellow-500 bg-yellow-50 text-yellow-600"
                         : index === 1
@@ -131,6 +131,19 @@ export default function Leaderboard({ onClose }: LeaderboardProps) {
                   >
                     {index + 1}
                   </div>
+                  
+                  {/* Avatar */}
+                  {entry.avatar_url ? (
+                    <img
+                      src={entry.avatar_url}
+                      alt={entry.display_name || "User avatar"}
+                      className="h-8 w-8 rounded-full border border-zinc-300 object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full border border-zinc-300 bg-zinc-100 text-xs font-bold text-zinc-500">
+                      {(entry.display_name || entry.canonical_user_id || "?").charAt(0).toUpperCase()}
+                    </div>
+                  )}
                   
                   <div className="flex-1 min-w-0">
                     <div className="truncate text-xs font-semibold text-zinc-900">

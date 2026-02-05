@@ -78,6 +78,8 @@ export async function POST(request: NextRequest) {
       displayName: farcaster.displayName,
       pfpUrl: farcaster.pfpUrl,
     } : null;
+    
+    console.log("📥 Farcaster data received:", farcasterData);
 
     if (!isAddress(wallet)) {
       return NextResponse.json({ error: "Invalid wallet address." }, { status: 400 });
@@ -159,7 +161,15 @@ export async function POST(request: NextRequest) {
       userData.avatar_url = farcasterData.pfpUrl;
     }
     
-    await (admin.from("users") as any).upsert(userData, { onConflict: "canonical_user_id" });
+    console.log("👤 Upserting user data:", userData);
+    
+    const { error: userError } = await (admin.from("users") as any).upsert(userData, { onConflict: "canonical_user_id" });
+    
+    if (userError) {
+      console.error("⚠️ User upsert error:", userError);
+    } else {
+      console.log("✅ User upserted successfully");
+    }
 
     const { error: gameError } = await (admin.from("games") as any).insert({
       id: gameId,
