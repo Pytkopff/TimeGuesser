@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createPublicClient, http, isAddress } from "viem";
 import { base } from "viem/chains";
-import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { SCORE_CONTRACT_ADDRESS } from "@/lib/scoreContract";
 
 const rpcUrl = process.env.BASE_RPC_URL ?? "https://mainnet.base.org";
@@ -13,16 +13,14 @@ const publicClient = createPublicClient({
 
 export async function POST(request: NextRequest) {
   try {
-    if (!supabaseAdmin) {
+    const admin = getSupabaseAdmin();
+    
+    if (!admin) {
       return NextResponse.json(
         { error: "Supabase admin not configured. Missing env vars." },
         { status: 500 }
       );
     }
-
-    // TypeScript type narrowing - after the check above, supabaseAdmin is guaranteed to be non-null
-    // Use type assertion since Supabase types are not fully generated
-    const admin = supabaseAdmin as ReturnType<typeof import("@supabase/supabase-js").createClient>;
 
     const body = await request.json();
     const { gameId, score, txHash, wallet, rounds } = body ?? {};

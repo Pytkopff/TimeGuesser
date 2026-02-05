@@ -1,15 +1,24 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// Lazy initialization to avoid build-time errors
+let supabaseAdmin: SupabaseClient | null = null;
 
-// Don't throw during build - only check at runtime
-let supabaseAdmin: ReturnType<typeof createClient> | null = null;
-
-if (supabaseUrl && serviceRoleKey) {
+export function getSupabaseAdmin(): SupabaseClient | null {
+  if (supabaseAdmin) return supabaseAdmin;
+  
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  if (!supabaseUrl || !serviceRoleKey) {
+    return null;
+  }
+  
   supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false },
   });
+  
+  return supabaseAdmin;
 }
 
+// Keep backward compatibility
 export { supabaseAdmin };
