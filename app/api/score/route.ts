@@ -34,16 +34,29 @@ function getContractAddress() {
 }
 
 export async function POST(request: NextRequest) {
+  console.log("📥 /api/score called");
+  
   try {
+    // Log env vars (without exposing secrets)
+    console.log("🔍 Checking env vars:", {
+      hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+      supabaseUrlStart: process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 20),
+      hasServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+      hasContractAddress: !!process.env.NEXT_PUBLIC_SCORE_CONTRACT_ADDRESS,
+    });
+    
     const admin = getSupabaseAdmin();
     const publicClient = getPublicClient();
     
     if (!admin) {
+      console.error("❌ Supabase admin is null");
       return NextResponse.json(
         { error: "Supabase admin not configured. Missing env vars." },
         { status: 500 }
       );
     }
+    
+    console.log("✅ Supabase admin created");
 
     const body = await request.json();
     const { gameId, score, txHash, wallet, rounds } = body ?? {};
@@ -142,6 +155,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ ok: true });
   } catch (err) {
+    console.error("❌ /api/score error:", err instanceof Error ? err.message : err);
+    console.error("❌ Full error:", err);
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Unknown error" },
       { status: 500 }
