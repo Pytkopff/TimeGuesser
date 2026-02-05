@@ -6,13 +6,22 @@ import { base } from "wagmi/chains";
 import { ConnectWallet } from "@coinbase/onchainkit/wallet";
 import { SCORE_CONTRACT_ABI, SCORE_CONTRACT_ADDRESS } from "@/lib/scoreContract";
 
+type RoundData = {
+  photoId: string;
+  yearGuess: number;
+  yearTrue: number;
+  delta: number;
+  score: number;
+};
+
 type MintScoreProps = {
   gameId: string;
   score: number;
+  rounds?: RoundData[];
   onMinted?: (txHash: string) => void;
 };
 
-export default function MintScore({ gameId, score, onMinted }: MintScoreProps) {
+export default function MintScore({ gameId, score, rounds = [], onMinted }: MintScoreProps) {
   const { address, chainId: accountChainId } = useAccount();
   const [mintError, setMintError] = useState<string | null>(null);
   const [isLoadingSignature, setIsLoadingSignature] = useState(false);
@@ -246,6 +255,7 @@ export default function MintScore({ gameId, score, onMinted }: MintScoreProps) {
           score,
           txHash: hash,
           wallet: address,
+          rounds, // Include round data for leaderboard
         }),
       })
         .then((res) => {

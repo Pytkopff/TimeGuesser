@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import MintScore from "@/components/MintScore";
+import Leaderboard from "@/components/Leaderboard";
 
 type Photo = {
   id: string;
@@ -26,6 +27,17 @@ export default function Home() {
   const [isZoomed, setIsZoomed] = useState(false);
   const [gameId, setGameId] = useState(() => crypto.randomUUID());
   const [hasMinted, setHasMinted] = useState(false);
+  
+  // Collect round data for leaderboard
+  type RoundData = {
+    photoId: string;
+    yearGuess: number;
+    yearTrue: number;
+    delta: number;
+    score: number;
+  };
+  const [roundsData, setRoundsData] = useState<RoundData[]>([]);
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
 
   const minYear = 1900;
   const maxYear = useMemo(() => new Date().getFullYear(), []);
@@ -65,6 +77,7 @@ export default function Home() {
     setRound(1);
     setGameId(crypto.randomUUID());
     setHasMinted(false);
+    setRoundsData([]);
   };
 
   useEffect(() => {
@@ -117,6 +130,18 @@ export default function Home() {
     setLastScore(score);
     setTotalScore((prev) => prev + score);
     setShowResult(true);
+    
+    // Save round data for leaderboard
+    setRoundsData((prev) => [
+      ...prev,
+      {
+        photoId: currentPhoto.id,
+        yearGuess: guessYear,
+        yearTrue: currentPhoto.year_true,
+        delta,
+        score,
+      },
+    ]);
   };
 
   const handleNextRound = () => {
@@ -160,6 +185,13 @@ export default function Home() {
             </div>
           </div>
           <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-600 sm:gap-3 sm:text-xs">
+            <button
+              type="button"
+              onClick={() => setShowLeaderboard(true)}
+              className="rounded-full border-2 border-zinc-900 bg-zinc-900 px-2 py-1 text-white hover:bg-zinc-800 sm:px-3"
+            >
+              🏆
+            </button>
             <span className="rounded-full border border-zinc-900 px-2 py-1 sm:px-3">
               Round {round}/{maxRounds}
             </span>
@@ -287,6 +319,7 @@ export default function Home() {
                       <MintScore
                         gameId={gameId}
                         score={totalScore}
+                        rounds={roundsData}
                         onMinted={() => setHasMinted(true)}
                       />
                     ) : (
@@ -334,6 +367,10 @@ export default function Home() {
             </button>
           </div>
         </div>
+      )}
+
+      {showLeaderboard && (
+        <Leaderboard onClose={() => setShowLeaderboard(false)} />
       )}
     </div>
   );

@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     const admin = supabaseAdmin as ReturnType<typeof import("@supabase/supabase-js").createClient>;
 
     const body = await request.json();
-    const { gameId, score, txHash, wallet } = body ?? {};
+    const { gameId, score, txHash, wallet, rounds } = body ?? {};
 
     if (!gameId || !txHash || typeof score !== "number" || !wallet) {
       return NextResponse.json(
@@ -33,6 +33,9 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Validate rounds data if provided
+    const validRounds = Array.isArray(rounds) ? rounds : [];
 
     if (!isAddress(wallet)) {
       return NextResponse.json({ error: "Invalid wallet address." }, { status: 400 });
@@ -82,6 +85,26 @@ export async function POST(request: NextRequest) {
 
     if (gameError) {
       return NextResponse.json({ error: gameError.message }, { status: 500 });
+    }
+
+    // Insert round data for leaderboard
+    if (validRounds.length > 0) {
+      const roundInserts = validRounds.map((r: any, index: number) => ({
+        game_id: gameId,
+        photo_id: r.photoId || null,
+        round_index: index + 1,
+        year_guess: r.yearGuess,
+        year_true: r.yearTrue,
+        delta_years: r.delta,
+        score: r.score,
+        answered_at: new Date().toISOString(),
+      }));
+
+      const { error: roundsError } = await (admin.from("rounds") as any).insert(roundInserts);
+      if (roundsError) {
+        console.error("Failed to insert rounds:", roundsError);
+        // Don't fail the whole request, just log the error
+      }
     }
 
     const { error: mintError } = await (admin.from("mints") as any).insert({
