@@ -7,8 +7,8 @@
   "frame": {
     "version": "1",
     "name": "TimeGuesser",
-    "subtitle": "Guess the year of iconic photos",
-    "description": "Test your knowledge of history! Look at iconic photographs and guess what year they were taken. Play 5 rounds, earn points for accuracy, and mint your score onchain to compete on the global leaderboard.",
+    "subtitle": "Guess when photos were taken",
+    "description": "Look at iconic photographs and guess the year. Play 5 rounds, earn points for accuracy, mint your score onchain and compete on the global leaderboard.",
     "tagline": "How well do you know history?",
     "iconUrl": "https://time-guesser-three.vercel.app/icon.png",
     "homeUrl": "https://time-guesser-three.vercel.app",
