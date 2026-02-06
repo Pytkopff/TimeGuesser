@@ -13,6 +13,8 @@
     "buttonTitle": "Play TimeGuesser",
     "splashImageUrl": "https://time-guesser-three.vercel.app/splash.png",
     "splashBackgroundColor": "#1a1a2e",
-    "webhookUrl": "https://time-guesser-three.vercel.app/api/frame/webhook"
+    "webhookUrl": "https://time-guesser-three.vercel.app/api/frame/webhook",
+    "primaryCategory": "games",
+    "tags": ["trivia", "photos", "history", "guessing", "onchain"]
   }
 }
