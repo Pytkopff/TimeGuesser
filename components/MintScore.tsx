@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useAccount, useWriteContract, useWaitForTransactionReceipt, useChainId, useSwitchChain } from "wagmi";
+import { useAccount, useConnect, useWriteContract, useWaitForTransactionReceipt, useChainId, useSwitchChain } from "wagmi";
 import { base } from "wagmi/chains";
 import { ConnectWallet } from "@coinbase/onchainkit/wallet";
 import { SCORE_CONTRACT_ABI, SCORE_CONTRACT_ADDRESS } from "@/lib/scoreContract";
@@ -30,17 +30,51 @@ type MintScoreProps = {
 };
 
 export default function MintScore({ gameId, score, rounds = [], farcasterUser, onMinted }: MintScoreProps) {
-  const { address, chainId: accountChainId } = useAccount();
+  const { address, chainId: accountChainId, isConnected } = useAccount();
+  const { connect, connectors, isPending: isConnecting } = useConnect();
   const [mintError, setMintError] = useState<string | null>(null);
   const [isLoadingSignature, setIsLoadingSignature] = useState(false);
   const [signature, setSignature] = useState<`0x${string}` | null>(null);
   const [isSwitchingChain, setIsSwitchingChain] = useState(false);
   const [pendingMint, setPendingMint] = useState(false); // Flag to track if we're waiting to mint after chain switch
+  const [autoConnectAttempted, setAutoConnectAttempted] = useState(false);
   
   // Check current chain - use both useChainId and account chainId for reliability
   const chainIdFromHook = useChainId();
   const chainId = accountChainId || chainIdFromHook; // Prefer account chainId as it's more reliable
   const { switchChain, isPending: isSwitching } = useSwitchChain();
+  
+  // Try to auto-connect with Farcaster Frame connector
+  useEffect(() => {
+    if (!isConnected && !isConnecting && !autoConnectAttempted) {
+      setAutoConnectAttempted(true);
+      
+      // Find Farcaster Frame connector
+      const farcasterConnector = connectors.find(c => c.id === "farcasterFrame" || c.name === "Farcaster Frame");
+      
+      if (farcasterConnector) {
+        console.log("🔵 Attempting auto-connect with Farcaster Frame...");
+        connect({ connector: farcasterConnector });
+      }
+    }
+  }, [isConnected, isConnecting, autoConnectAttempted, connectors, connect]);
+  
+  // Handle connect button click
+  const handleConnect = () => {
+    // Try Farcaster connector first, fallback to showing all connectors
+    const farcasterConnector = connectors.find(c => c.id === "farcasterFrame" || c.name === "Farcaster Frame");
+    
+    if (farcasterConnector) {
+      console.log("🔵 Connecting with Farcaster Frame connector...");
+      connect({ connector: farcasterConnector });
+    } else {
+      // Fallback to injected (MetaMask, etc.)
+      const injectedConnector = connectors.find(c => c.id === "injected");
+      if (injectedConnector) {
+        connect({ connector: injectedConnector });
+      }
+    }
+  };
   
   // Debug: log chain changes
   useEffect(() => {
@@ -344,8 +378,18 @@ export default function MintScore({ gameId, score, rounds = [], farcasterUser, o
       </div>
 
       {!address && (
-        <div className="mt-3 flex justify-center">
-          <ConnectWallet text="Connect wallet" />
+        <div className="mt-3 flex flex-col items-center gap-2">
+          <button
+            type="button"
+            onClick={handleConnect}
+            disabled={isConnecting}
+            className="w-full rounded-2xl border-2 border-zinc-900 bg-zinc-900 py-3 text-xs font-bold uppercase tracking-[0.2em] text-white disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isConnecting ? "Connecting..." : "Connect Wallet"}
+          </button>
+          {/* Fallback to OnchainKit if custom connect fails */}
+          <div className="text-[10px] text-zinc-400">or</div>
+          <ConnectWallet text="Other wallets" />
         </div>
       )}
 
