@@ -12,7 +12,9 @@ const getBaseUrl = (request: NextRequest) => {
 
 // Main frame - displayed when sharing the game
 const buildMainFrameHtml = (baseUrl: string) => {
-  const imageUrl = `${baseUrl}/api/frame/image`;
+  // Add timestamp for cache busting
+  const cacheBuster = Date.now();
+  const imageUrl = `${baseUrl}/api/frame/image?v=${cacheBuster}`;
   const gameUrl = `${baseUrl}`;
 
   return `<!doctype html>
