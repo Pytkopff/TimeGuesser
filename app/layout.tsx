@@ -16,6 +16,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "TimeGuesser",
   description: "Guess the year of iconic photos. 5 rounds. Big score.",
+  other: {
+    "base:app_id": "6985c5df8dcaa0daf5755f80",
+  },
 };
 
 export default function RootLayout({
