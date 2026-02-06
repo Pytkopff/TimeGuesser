@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
               marginBottom: "48px",
             }}
           >
-            Chrono Edition
+            Historic Photo Trivia
           </div>
 
           {/* Main tagline */}
@@ -93,35 +93,18 @@ export async function GET(request: NextRequest) {
             </span>
           </div>
 
-          {/* CTA */}
-          <div
-            style={{
-              display: "flex",
-              marginTop: "48px",
-              padding: "16px 48px",
-              background: "#ffffff",
-              borderRadius: "16px",
-              fontSize: "28px",
-              fontWeight: 800,
-              color: "#1a1a2e",
-              textTransform: "uppercase",
-              letterSpacing: "0.1em",
-            }}
-          >
-            🎮 Tap to Play
-          </div>
-
           {/* Footer */}
           <div
             style={{
               display: "flex",
               position: "absolute",
-              bottom: "24px",
-              fontSize: "18px",
+              bottom: "32px",
+              fontSize: "20px",
               color: "#718096",
+              letterSpacing: "0.1em",
             }}
           >
-            Built on Base • Farcaster Frame
+            Built on Base
           </div>
         </div>
       ),
