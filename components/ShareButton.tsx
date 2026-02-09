@@ -10,7 +10,7 @@ type ShareButtonProps = {
 };
 
 export default function ShareButton({ score }: ShareButtonProps) {
-  const { address } = useAccount();
+  useAccount(); // keep hook for potential future use
   const { isInFrame } = useFarcaster();
   const [sharing, setSharing] = useState(false);
 
@@ -23,11 +23,7 @@ export default function ShareButton({ score }: ShareButtonProps) {
         ? window.location.origin 
         : "https://time-guesser-three.vercel.app";
       
-      const shortAddr = address 
-        ? `${address.slice(0, 6)}...${address.slice(-4)}` 
-        : "";
-      
-      const text = `I just scored ${score} points in TimeGuesser! 🕰️\n\nCan you beat my score?${shortAddr ? `\n\n${shortAddr}` : ""}`;
+      const text = `🕰️ I scored ${score}/5000 in TimeGuesser!\n\nCan you guess the year from just a photo? 📸\n\nBeat my score 👇`;
 
       if (isInFrame) {
         // Use Farcaster SDK to open compose within the app
