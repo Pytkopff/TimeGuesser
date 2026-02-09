@@ -7,25 +7,12 @@
   "frame": {
     "version": "1",
     "name": "TimeGuesser",
-    "subtitle": "Guess when photos were taken",
-    "description": "Look at iconic photographs and guess the year. Play 5 rounds, earn points for accuracy, mint your score onchain and compete on the global leaderboard.",
-    "tagline": "How well do you know history?",
-    "iconUrl": "https://time-guesser-three.vercel.app/icon.png",
+    "iconUrl": "https://time-guesser-three.vercel.app/api/og/icon",
     "homeUrl": "https://time-guesser-three.vercel.app",
-    "imageUrl": "https://time-guesser-three.vercel.app/api/frame/image",
-    "heroImageUrl": "https://time-guesser-three.vercel.app/splash.png",
+    "imageUrl": "https://time-guesser-three.vercel.app/api/og/cover",
     "buttonTitle": "Play TimeGuesser",
-    "splashImageUrl": "https://time-guesser-three.vercel.app/splash.png",
+    "splashImageUrl": "https://time-guesser-three.vercel.app/api/og/splash",
     "splashBackgroundColor": "#1a1a2e",
-    "webhookUrl": "https://time-guesser-three.vercel.app/api/frame/webhook",
-    "primaryCategory": "games",
-    "tags": ["trivia", "photos", "history", "guessing", "onchain"],
-    "screenshotUrls": [
-      "https://time-guesser-three.vercel.app/screenshot1.png"
-    ],
-    "ogTitle": "TimeGuesser",
-    "ogDescription": "Guess when iconic photos were taken. Play 5 rounds, mint your score onchain, compete globally.",
-    "ogImageUrl": "https://time-guesser-three.vercel.app/og-image.png",
-    "noindex": false
+    "webhookUrl": "https://time-guesser-three.vercel.app/api/webhook"
   }
 }

@@ -25,9 +25,9 @@ export const metadata: Metadata = {
   },
   other: {
     "base:app_id": "6985c5df8dcaa0daf5755f80",
-    // Farcaster Frame meta tags for link previews
+    // Farcaster Frame v2 meta tags - must match farcaster.json manifest
     "fc:frame": "vNext",
-    "fc:frame:image": `${BASE_URL}/api/frame/image`,
+    "fc:frame:image": `${BASE_URL}/api/og/cover`,
     "fc:frame:image:aspect_ratio": "1.91:1",
     "fc:frame:button:1": "Play TimeGuesser",
     "fc:frame:button:1:action": "launch_frame",
