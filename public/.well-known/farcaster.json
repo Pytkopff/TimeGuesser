@@ -4,7 +4,7 @@
     "payload": "eyJkb21haW4iOiJ0aW1lLWd1ZXNzZXItdGhyZWUudmVyY2VsLmFwcCJ9",
     "signature": "9adXrb/FVLIaXEYnWp5K6nPkri2Q9I8//GG4P/q01k8k/ZSlqFZ2cg2R6Nef4aCLO3ZpoxLgSS6gvW6KydwTIRs="
   },
-  "frame": {
+  "miniapp": {
     "version": "1",
     "name": "TimeGuesser",
     "iconUrl": "https://time-guesser-three.vercel.app/api/og/icon",
@@ -13,6 +13,14 @@
     "buttonTitle": "Play TimeGuesser",
     "splashImageUrl": "https://time-guesser-three.vercel.app/api/og/splash",
     "splashBackgroundColor": "#1a1a2e",
-    "webhookUrl": "https://time-guesser-three.vercel.app/api/webhook"
+    "webhookUrl": "https://time-guesser-three.vercel.app/api/webhook",
+    "primaryCategory": "games",
+    "tags": ["trivia", "photos", "history", "guessing", "onchain"],
+    "subtitle": "Guess when photos were taken",
+    "description": "Look at iconic photos and guess the year. 5 rounds, mint your score onchain, compete globally!",
+    "tagline": "How well do you know history?",
+    "ogTitle": "TimeGuesser",
+    "ogDescription": "Guess when iconic photos were taken. Play 5 rounds, mint your score onchain, compete globally.",
+    "ogImageUrl": "https://time-guesser-three.vercel.app/api/og/cover"
   }
 }
