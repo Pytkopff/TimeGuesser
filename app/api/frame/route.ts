@@ -10,11 +10,30 @@ const getBaseUrl = (request: NextRequest) => {
   return `${proto}://${host}`;
 };
 
+// Build Farcaster Frame v2 / Mini App embed JSON (same format as Framedl)
+const buildFrameEmbed = (baseUrl: string, title = "Play TimeGuesser") => {
+  return JSON.stringify({
+    version: "next",
+    imageUrl: `${baseUrl}/api/og/cover`,
+    button: {
+      title,
+      action: {
+        type: "launch_miniapp",
+        name: "TimeGuesser",
+        url: baseUrl,
+        splashImageUrl: `${baseUrl}/api/og/splash`,
+        splashBackgroundColor: "#1a1a2e",
+      },
+    },
+  });
+};
+
 // Main frame - displayed when sharing the game
 const buildMainFrameHtml = (baseUrl: string) => {
-  // Use dynamic OG image endpoint
   const imageUrl = `${baseUrl}/api/og/cover`;
-  const gameUrl = `${baseUrl}`;
+  const frameEmbed = buildFrameEmbed(baseUrl);
+  // Escape for HTML attribute
+  const frameEmbedAttr = frameEmbed.replace(/"/g, "&quot;");
 
   return `<!doctype html>
 <html>
@@ -24,46 +43,13 @@ const buildMainFrameHtml = (baseUrl: string) => {
     <meta property="og:description" content="Can you guess when these iconic photos were taken? 5 rounds, max 5000 points!" />
     <meta property="og:image" content="${imageUrl}" />
     
-    <meta property="fc:frame" content="vNext" />
-    <meta property="fc:frame:image" content="${imageUrl}" />
-    <meta property="fc:frame:image:aspect_ratio" content="1.91:1" />
-    <meta property="fc:frame:button:1" content="Play TimeGuesser" />
-    <meta property="fc:frame:button:1:action" content="launch_frame" />
+    <meta name="fc:frame" content="${frameEmbedAttr}" />
+    <meta name="fc:miniapp" content="${frameEmbedAttr}" />
   </head>
   <body>
     <h1>TimeGuesser</h1>
     <p>Guess the year of iconic photos. 5 rounds. Max 5000 points.</p>
-    <a href="${gameUrl}">Play Now</a>
-  </body>
-</html>`;
-};
-
-// Frame with leaderboard preview
-const buildLeaderboardFrameHtml = (baseUrl: string, topScores: any[]) => {
-  const imageUrl = `${baseUrl}/api/frame/image?type=leaderboard`;
-  const postUrl = `${baseUrl}/api/frame`;
-  const gameUrl = `${baseUrl}`;
-
-  return `<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <meta property="og:title" content="TimeGuesser Leaderboard" />
-    <meta property="og:description" content="Top players in TimeGuesser. Can you beat them?" />
-    <meta property="og:image" content="${imageUrl}" />
-    
-    <meta property="fc:frame" content="vNext" />
-    <meta property="fc:frame:image" content="${imageUrl}" />
-    <meta property="fc:frame:image:aspect_ratio" content="1.91:1" />
-    <meta property="fc:frame:post_url" content="${postUrl}" />
-    <meta property="fc:frame:button:1" content="🎮 Play Now" />
-    <meta property="fc:frame:button:1:action" content="link" />
-    <meta property="fc:frame:button:1:target" content="${gameUrl}" />
-    <meta property="fc:frame:button:2" content="🔄 Refresh" />
-    <meta property="fc:frame:button:2:action" content="post" />
-  </head>
-  <body>
-    <h1>TimeGuesser Leaderboard</h1>
+    <a href="${baseUrl}">Play Now</a>
   </body>
 </html>`;
 };
@@ -83,31 +69,9 @@ export async function POST(request: NextRequest) {
   
   try {
     const body = await request.json().catch(() => ({}));
-    const buttonIndex = body?.untrustedData?.buttonIndex;
+    console.log("📥 Frame POST:", { body });
     
-    console.log("📥 Frame POST:", { buttonIndex, body });
-    
-    // Button 2 = Show leaderboard
-    if (buttonIndex === 2) {
-      // Fetch top scores for leaderboard
-      let topScores: any[] = [];
-      try {
-        const res = await fetch(`${baseUrl}/api/leaderboard?type=top_score&limit=5`);
-        const data = await res.json();
-        topScores = data.leaderboard || [];
-      } catch (e) {
-        console.error("Failed to fetch leaderboard:", e);
-      }
-      
-      return new NextResponse(buildLeaderboardFrameHtml(baseUrl, topScores), {
-        headers: { 
-          "Content-Type": "text/html; charset=utf-8",
-          "Cache-Control": "no-store, max-age=0",
-        },
-      });
-    }
-    
-    // Default: show main frame
+    // Always return the main frame for any POST
     return new NextResponse(buildMainFrameHtml(baseUrl), {
       headers: { 
         "Content-Type": "text/html; charset=utf-8",

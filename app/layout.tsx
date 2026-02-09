@@ -15,22 +15,36 @@ const geistMono = Geist_Mono({
 
 const BASE_URL = "https://time-guesser-three.vercel.app";
 
+// Farcaster Frame v2 / Mini App embed config (JSON format, like Framedl)
+const frameEmbed = JSON.stringify({
+  version: "next",
+  imageUrl: `${BASE_URL}/api/og/cover`,
+  button: {
+    title: "Play TimeGuesser",
+    action: {
+      type: "launch_miniapp",
+      name: "TimeGuesser",
+      url: BASE_URL,
+      splashImageUrl: `${BASE_URL}/api/og/splash`,
+      splashBackgroundColor: "#1a1a2e",
+    },
+  },
+});
+
 export const metadata: Metadata = {
   title: "TimeGuesser",
   description: "Guess the year of iconic photos. 5 rounds. Big score.",
   openGraph: {
     title: "TimeGuesser - Guess the Year!",
     description: "Can you guess when these iconic photos were taken? 5 rounds, max 5000 points!",
-    images: [`${BASE_URL}/api/frame/image`],
+    images: [`${BASE_URL}/api/og/cover`],
   },
   other: {
     "base:app_id": "6985c5df8dcaa0daf5755f80",
-    // Farcaster Frame v2 meta tags - must match farcaster.json manifest
-    "fc:frame": "vNext",
-    "fc:frame:image": `${BASE_URL}/api/og/cover`,
-    "fc:frame:image:aspect_ratio": "1.91:1",
-    "fc:frame:button:1": "Play TimeGuesser",
-    "fc:frame:button:1:action": "launch_frame",
+    // Farcaster Frame v2 embed - JSON format with launch_miniapp action
+    "fc:frame": frameEmbed,
+    // Also set fc:miniapp for newer Farcaster clients
+    "fc:miniapp": frameEmbed,
   },
 };
 

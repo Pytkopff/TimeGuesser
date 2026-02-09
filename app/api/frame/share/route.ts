@@ -19,8 +19,23 @@ export async function GET(request: NextRequest) {
   const player = searchParams.get("player") || "";
   
   const imageUrl = `${baseUrl}/api/frame/image?type=score&score=${score}&player=${player}`;
-  const gameUrl = `${baseUrl}`;
-  const postUrl = `${baseUrl}/api/frame`;
+
+  // Farcaster Frame v2 / Mini App embed JSON (same format as Framedl)
+  const frameEmbed = JSON.stringify({
+    version: "next",
+    imageUrl,
+    button: {
+      title: "Play TimeGuesser",
+      action: {
+        type: "launch_miniapp",
+        name: "TimeGuesser",
+        url: baseUrl,
+        splashImageUrl: `${baseUrl}/api/og/splash`,
+        splashBackgroundColor: "#1a1a2e",
+      },
+    },
+  });
+  const frameEmbedAttr = frameEmbed.replace(/"/g, "&quot;");
 
   const html = `<!doctype html>
 <html>
@@ -30,16 +45,13 @@ export async function GET(request: NextRequest) {
     <meta property="og:description" content="Can you guess when these iconic photos were taken? Beat my score!" />
     <meta property="og:image" content="${imageUrl}" />
     
-    <meta property="fc:frame" content="vNext" />
-    <meta property="fc:frame:image" content="${imageUrl}" />
-    <meta property="fc:frame:image:aspect_ratio" content="1.91:1" />
-    <meta property="fc:frame:button:1" content="Play TimeGuesser" />
-    <meta property="fc:frame:button:1:action" content="launch_frame" />
+    <meta name="fc:frame" content="${frameEmbedAttr}" />
+    <meta name="fc:miniapp" content="${frameEmbedAttr}" />
   </head>
   <body>
     <h1>TimeGuesser Score: ${score} pts</h1>
     <p>Can you beat this score? Play now!</p>
-    <a href="${gameUrl}">Play TimeGuesser</a>
+    <a href="${baseUrl}">Play TimeGuesser</a>
   </body>
 </html>`;
 
