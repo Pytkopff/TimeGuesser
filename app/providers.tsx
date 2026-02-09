@@ -14,6 +14,28 @@ type ProvidersProps = {
   children: React.ReactNode;
 };
 
+// ============================================================
+// CRITICAL: Call ready() at MODULE LEVEL - before React renders
+// On mobile Warpcast, useEffect is too late - the splash screen
+// timeout fires before React's useEffect runs
+// ============================================================
+if (typeof window !== "undefined") {
+  // Fire-and-forget - don't await, don't block anything
+  sdk.actions.ready().catch(() => {
+    // Silently ignore - we're not in a Farcaster frame
+  });
+  
+  // Safety net: try again after 500ms in case first call was too early
+  setTimeout(() => {
+    sdk.actions.ready().catch(() => {});
+  }, 500);
+  
+  // Last resort: try one more time after 2 seconds
+  setTimeout(() => {
+    sdk.actions.ready().catch(() => {});
+  }, 2000);
+}
+
 // Create wagmi config with Farcaster Frame connector
 const config = createConfig({
   chains: [base],
@@ -32,20 +54,8 @@ const queryClient = new QueryClient();
 
 export default function Providers({ children }: ProvidersProps) {
   useEffect(() => {
-    // CRITICAL: Call ready() ASAP so Farcaster hides the splash screen
-    // On mobile, Farcaster will show a permanent loading spinner if ready() is delayed
-    const callReady = async () => {
-      try {
-        console.log("🔵 Calling sdk.actions.ready() immediately...");
-        await sdk.actions.ready();
-        console.log("✅ Frame ready signal sent");
-      } catch (err) {
-        // Not in a Farcaster frame - that's fine
-        console.log("ℹ️ sdk.actions.ready() not available (standalone mode)");
-      }
-    };
-    
-    callReady();
+    // Also call ready() in useEffect as additional safety net
+    sdk.actions.ready().catch(() => {});
   }, []);
 
   return (

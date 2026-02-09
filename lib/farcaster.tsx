@@ -32,7 +32,6 @@ type FarcasterContextType = {
   isInFrame: boolean;
   context: FrameContextData | null;
   user: FarcasterUser | null;
-  ready: () => Promise<void>;
 };
 
 const FarcasterContext = createContext<FarcasterContextType>({
@@ -40,7 +39,6 @@ const FarcasterContext = createContext<FarcasterContextType>({
   isInFrame: false,
   context: null,
   user: null,
-  ready: async () => {},
 });
 
 export function FarcasterProvider({ children }: { children: ReactNode }) {
@@ -54,35 +52,39 @@ export function FarcasterProvider({ children }: { children: ReactNode }) {
       try {
         console.log("🔵 Initializing Farcaster SDK...");
         
-        // Get context from Farcaster client
-        const ctx = await sdk.context;
+        // Race: get context with a 3-second timeout
+        // On mobile, sdk.context might hang if comlink isn't ready
+        const ctx = await Promise.race([
+          sdk.context,
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000)),
+        ]);
         
         if (ctx) {
           console.log("✅ Farcaster context received:", ctx);
-          setContext(ctx);
+          setContext(ctx as FrameContextData);
           setIsInFrame(true);
           
           // Extract user data from context
-          if (ctx.user) {
+          const ctxTyped = ctx as FrameContextData;
+          if (ctxTyped.user) {
             // Handle different SDK versions - pfpUrl can be string or pfp can be object
-            const ctxUser = ctx.user as any;
+            const ctxUser = ctxTyped.user as any;
             let avatarUrl = ctxUser.pfpUrl;
             if (!avatarUrl && ctxUser.pfp) {
               avatarUrl = typeof ctxUser.pfp === 'string' ? ctxUser.pfp : ctxUser.pfp?.url;
             }
             
             const farcasterUser: FarcasterUser = {
-              fid: ctx.user.fid,
-              username: ctx.user.username,
-              displayName: ctx.user.displayName,
+              fid: ctxTyped.user.fid,
+              username: ctxTyped.user.username,
+              displayName: ctxTyped.user.displayName,
               pfpUrl: avatarUrl,
             };
             setUser(farcasterUser);
             console.log("✅ Farcaster user:", farcasterUser);
-            console.log("✅ Avatar URL:", avatarUrl);
           }
         } else {
-          console.log("ℹ️ Not in Farcaster frame, running standalone");
+          console.log("ℹ️ Not in Farcaster frame (timeout or standalone)");
           setIsInFrame(false);
         }
       } catch (err) {
@@ -96,20 +98,8 @@ export function FarcasterProvider({ children }: { children: ReactNode }) {
     initFarcaster();
   }, []);
 
-  // Call this when app is ready to be shown
-  const ready = async () => {
-    if (isInFrame) {
-      try {
-        await sdk.actions.ready();
-        console.log("✅ Frame ready signal sent");
-      } catch (err) {
-        console.error("Failed to send ready signal:", err);
-      }
-    }
-  };
-
   return (
-    <FarcasterContext.Provider value={{ isLoaded, isInFrame, context, user, ready }}>
+    <FarcasterContext.Provider value={{ isLoaded, isInFrame, context, user }}>
       {children}
     </FarcasterContext.Provider>
   );
