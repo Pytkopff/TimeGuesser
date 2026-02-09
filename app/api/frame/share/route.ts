@@ -33,12 +33,8 @@ export async function GET(request: NextRequest) {
     <meta property="fc:frame" content="vNext" />
     <meta property="fc:frame:image" content="${imageUrl}" />
     <meta property="fc:frame:image:aspect_ratio" content="1.91:1" />
-    <meta property="fc:frame:post_url" content="${postUrl}" />
-    <meta property="fc:frame:button:1" content="🎮 Play & Beat This!" />
-    <meta property="fc:frame:button:1:action" content="link" />
-    <meta property="fc:frame:button:1:target" content="${gameUrl}" />
-    <meta property="fc:frame:button:2" content="🏆 Leaderboard" />
-    <meta property="fc:frame:button:2:action" content="post" />
+    <meta property="fc:frame:button:1" content="Play TimeGuesser" />
+    <meta property="fc:frame:button:1:action" content="launch_frame" />
   </head>
   <body>
     <h1>TimeGuesser Score: ${score} pts</h1>
