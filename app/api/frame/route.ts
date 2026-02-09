@@ -12,9 +12,9 @@ const getBaseUrl = (request: NextRequest) => {
 
 // Main frame - displayed when sharing the game
 const buildMainFrameHtml = (baseUrl: string) => {
-  // Add timestamp for cache busting
-  const cacheBuster = Date.now();
-  const imageUrl = `${baseUrl}/api/frame/image?v=${cacheBuster}`;
+  // Use static image from public folder for consistent Frame display
+  // Put your custom image at: public/frame-cover.png (1200x628 or 1200x630)
+  const imageUrl = `${baseUrl}/frame-cover.png`;
   const gameUrl = `${baseUrl}`;
 
   return `<!doctype html>

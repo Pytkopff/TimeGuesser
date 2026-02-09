@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { OnchainKitProvider } from "@coinbase/onchainkit";
 import { WagmiProvider, createConfig, http } from "wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -31,40 +31,22 @@ const config = createConfig({
 const queryClient = new QueryClient();
 
 export default function Providers({ children }: ProvidersProps) {
-  const [isFrameReady, setIsFrameReady] = useState(false);
-
   useEffect(() => {
-    const initFrame = async () => {
+    // CRITICAL: Call ready() ASAP so Farcaster hides the splash screen
+    // On mobile, Farcaster will show a permanent loading spinner if ready() is delayed
+    const callReady = async () => {
       try {
-        // Check if we're in a Farcaster frame
-        const context = await sdk.context;
-        
-        if (context) {
-          console.log("🔵 In Farcaster frame, notifying ready...");
-          // Notify frame that app is ready
-          await sdk.actions.ready();
-          console.log("✅ Frame ready signal sent");
-        } else {
-          console.log("ℹ️ Not in Farcaster frame");
-        }
+        console.log("🔵 Calling sdk.actions.ready() immediately...");
+        await sdk.actions.ready();
+        console.log("✅ Frame ready signal sent");
       } catch (err) {
-        console.log("ℹ️ Farcaster SDK error:", err);
+        // Not in a Farcaster frame - that's fine
+        console.log("ℹ️ sdk.actions.ready() not available (standalone mode)");
       }
-      
-      setIsFrameReady(true);
     };
     
-    initFrame();
+    callReady();
   }, []);
-
-  // Show loading while initializing frame
-  if (!isFrameReady) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f5f3ee]">
-        <div className="text-zinc-500 text-sm">Loading...</div>
-      </div>
-    );
-  }
 
   return (
     <FarcasterProvider>

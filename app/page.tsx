@@ -32,7 +32,7 @@ export default function Home() {
   const [hasMinted, setHasMinted] = useState(false);
   
   // Farcaster integration
-  const { isLoaded: farcasterLoaded, isInFrame, user: farcasterUser, ready } = useFarcaster();
+  const { isLoaded: farcasterLoaded, isInFrame, user: farcasterUser } = useFarcaster();
   
   // Collect round data for leaderboard
   type RoundData = {
@@ -44,13 +44,6 @@ export default function Home() {
   };
   const [roundsData, setRoundsData] = useState<RoundData[]>([]);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
-  
-  // Send ready signal to Farcaster when app is loaded
-  useEffect(() => {
-    if (farcasterLoaded && photos.length > 0) {
-      ready();
-    }
-  }, [farcasterLoaded, photos.length, ready]);
 
   const minYear = 1900;
   const maxYear = useMemo(() => new Date().getFullYear(), []);
