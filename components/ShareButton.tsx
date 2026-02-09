@@ -14,39 +14,38 @@ export default function ShareButton({ score }: ShareButtonProps) {
   const { isInFrame } = useFarcaster();
   const [sharing, setSharing] = useState(false);
 
-  const getShareUrl = () => {
-    const baseUrl = typeof window !== "undefined" 
-      ? window.location.origin 
-      : "https://time-guesser-three.vercel.app";
-    const params = new URLSearchParams({
-      score: score.toString(),
-      ...(address && { player: address }),
-    });
-    return `${baseUrl}/api/frame/share?${params.toString()}`;
-  };
-
   const handleShare = async () => {
     setSharing(true);
     try {
-      const shareUrl = getShareUrl();
-      const text = `I just scored ${score} points in TimeGuesser! 🕰️\n\nCan you beat my score? Play now:`;
+      // The embed MUST be the main app URL so Farcaster uses the manifest
+      // and shows the "Play TimeGuesser" button from farcaster.json
+      const appUrl = typeof window !== "undefined" 
+        ? window.location.origin 
+        : "https://time-guesser-three.vercel.app";
+      
+      const shortAddr = address 
+        ? `${address.slice(0, 6)}...${address.slice(-4)}` 
+        : "";
+      
+      const text = `I just scored ${score} points in TimeGuesser! 🕰️\n\nCan you beat my score?${shortAddr ? `\n\n${shortAddr}` : ""}`;
 
       if (isInFrame) {
         // Use Farcaster SDK to open compose within the app
         await sdk.actions.composeCast({
           text,
-          embeds: [shareUrl],
+          embeds: [appUrl],
         });
       } else {
         // Fallback: open Warpcast compose in new tab
-        const warpcastUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(text)}&embeds[]=${encodeURIComponent(shareUrl)}`;
+        const warpcastUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(text)}&embeds[]=${encodeURIComponent(appUrl)}`;
         window.open(warpcastUrl, "_blank");
       }
     } catch (err) {
       console.error("Share error:", err);
-      // Fallback to clipboard
       try {
-        await navigator.clipboard.writeText(getShareUrl());
+        await navigator.clipboard.writeText(
+          `I scored ${score} pts in TimeGuesser! Play: ${window.location.origin}`
+        );
         alert("Link copied to clipboard!");
       } catch {
         console.error("Clipboard failed too");
