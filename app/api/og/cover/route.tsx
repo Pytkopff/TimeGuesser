@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
 
-// Generate 1200x628 cover image for Farcaster frame embed
+// Generate 1200x630 cover image for Farcaster frame embed (Base docs: 1200×630 / 1.91:1)
 export async function GET() {
   return new ImageResponse(
     (
@@ -13,7 +13,7 @@ export async function GET() {
           alignItems: "center",
           justifyContent: "center",
           width: "1200px",
-          height: "628px",
+          height: "630px",
           background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)",
           fontFamily: "system-ui, sans-serif",
         }}
@@ -102,7 +102,7 @@ export async function GET() {
     ),
     {
       width: 1200,
-      height: 628,
+      height: 630,
     }
   );
 }
